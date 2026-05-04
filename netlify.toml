@@ -1,0 +1,19 @@
+[build]
+  command = "echo 'Static site - no build needed'"
+  functions = "netlify/functions"
+  publish = "."
+
+[dev]
+  command = "echo 'Running local dev server'"
+  port = 8888
+
+# Environment variables required:
+# AIRTABLE_API_KEY - Your Airtable Personal Access Token
+# AIRTABLE_BASE_ID - Your Airtable Base ID
+# ADMIN_PASSWORD - Password for login (optional, can be hardcoded in index.html for now)
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  condition = "!{path: /\\.netlify/}"

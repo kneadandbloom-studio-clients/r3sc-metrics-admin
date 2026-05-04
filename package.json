@@ -1,0 +1,26 @@
+{
+  "name": "r3sc-metrics-admin",
+  "version": "1.0.0",
+  "description": "R3SC Non-Profit Monthly Metrics Reporting System",
+  "main": "index.js",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build step needed for static files'",
+    "deploy": "netlify deploy"
+  },
+  "keywords": [
+    "nonprofit",
+    "metrics",
+    "reporting",
+    "r3sc"
+  ],
+  "author": "Allie C.",
+  "license": "MIT",
+  "dependencies": {
+    "airtable": "^2.0.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}
