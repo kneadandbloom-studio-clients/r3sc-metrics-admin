@@ -111,7 +111,7 @@ exports.handler = async (event) => {
 
     // Create the MonthlyReports row
     const record = await base("MonthlyReports").create({
-			monthYear: body.Month,
+			monthYear: body.monthYear,
       hygieneItems: hygieneItems,
 			monetaryDonations: body.monetaryDonations || 0,
 			newPartnerships: body.newPartnerships || 0,
