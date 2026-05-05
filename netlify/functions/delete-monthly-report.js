@@ -2,8 +2,10 @@
    netlify/functions/delete-monthly-report.js
    The R3SC — Delete a monthly impact report
 
+   Also deletes all related DonatedItems rows for this report.
+
    Required env vars:
-     ADMIN_PASSWORD     — shared admin password
+     ADMIN_PASSWORDS    — comma-separated admin passwords
      AIRTABLE_API_KEY   — your Airtable PAT
      AIRTABLE_BASE_ID   — your R3SC base ID
    ============================================================ */
@@ -17,6 +19,11 @@ const CORS_HEADERS = {
 
 const Airtable = require("airtable");
 
+function isValidPassword(submitted) {
+  const stored = process.env.ADMIN_PASSWORDS || process.env.ADMIN_PASSWORD || "";
+  return stored.split(",").map(p => p.trim()).includes(submitted);
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
@@ -25,7 +32,6 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
-  // ── Auth ─────────────────────────────────────────────────
   let body;
   try {
     body = JSON.parse(event.body || "{}");
@@ -33,7 +39,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "Invalid request body." }) };
   }
 
-  if (!process.env.ADMIN_PASSWORD || body.password !== process.env.ADMIN_PASSWORD) {
+  if (!isValidPassword(body.password)) {
     return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unauthorized" }) };
   }
 
@@ -46,6 +52,20 @@ exports.handler = async (event) => {
   );
 
   try {
+    // ── 1. Delete related DonatedItems rows first ─────────────────
+    const relatedItems = await base("DonatedItems")
+      .select({ filterByFormula: `FIND("${body.id}", ARRAYJOIN({monthYear}))` })
+      .all();
+
+    if (relatedItems.length > 0) {
+      const ids = relatedItems.map(r => r.id);
+      for (let i = 0; i < ids.length; i += 10) {
+        await base("DonatedItems").destroy(ids.slice(i, i + 10));
+      }
+      console.log(`Deleted ${relatedItems.length} DonatedItems for report ${body.id}`);
+    }
+
+    // ── 2. Delete the MonthlyReports row ─────────────────────────
     await base("MonthlyReports").destroy(body.id);
 
     console.log(`Monthly report deleted: ${body.id}`);

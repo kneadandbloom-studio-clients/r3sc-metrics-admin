@@ -178,6 +178,14 @@
     }
     .item-row input:focus { border-color: var(--teal); background: var(--white); }
     .item-row input.qty { flex: 0 0 80px; text-align: right; }
+    .item-select {
+      flex: 1; padding: 9px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: 'Roboto', sans-serif;
+      font-size: 13.5px; color: var(--slate); background: var(--bg);
+      outline: none; transition: border-color .2s; cursor: pointer;
+      appearance: auto;
+    }
+    .item-select:focus { border-color: var(--teal); background: var(--white); }
     .remove-item-btn {
       background: none; border: none; cursor: pointer; color: var(--muted);
       font-size: 16px; line-height: 1; padding: 4px; transition: color .15s;
@@ -381,7 +389,7 @@
                 <!-- item rows injected here -->
               </div>
             </div>
-            <p class="form-hint">Track individual hygiene or household items and their quantities.</p>
+            <p class="form-hint">Select each donated item and enter the quantity. Item type is assigned automatically.</p>
           </div>
 
         </div><!-- /.form-inner -->
@@ -459,27 +467,65 @@
     document.getElementById(id).classList.toggle('open');
   }
 
+  // ── ITEM TYPE MAP (mirrors server-side) ──────────────────────────
+  const ITEM_TYPE_MAP = {
+    "Body Wash":           "Hygiene",
+    "Conditioner":         "Hygiene",
+    "Deodorant":           "Hygiene",
+    "Hand Sanitizer":      "Hygiene",
+    "Hand Soap":           "Hygiene",
+    "Lotion":              "Hygiene",
+    "Shampoo":             "Hygiene",
+    "Soap (Bar)":          "Hygiene",
+    "Toothbrush":          "Hygiene",
+    "Toothpaste":          "Hygiene",
+    "All-Purpose Cleaner": "Household",
+    "Bleach":              "Household",
+    "Broom":               "Household",
+    "Dish Detergent":      "Household",
+    "Laundry Detergent":   "Household",
+    "Mop":                 "Household",
+    "Paper Towels":        "Household",
+    "Sponge":              "Household",
+    "Toilet Tissue":       "Household",
+    "Trash Bags":          "Household",
+  };
+
+  const HYGIENE_ITEMS   = Object.keys(ITEM_TYPE_MAP).filter(k => ITEM_TYPE_MAP[k] === "Hygiene");
+  const HOUSEHOLD_ITEMS = Object.keys(ITEM_TYPE_MAP).filter(k => ITEM_TYPE_MAP[k] === "Household");
+
   // ── ITEMIZED DONATIONS ────────────────────────────────────────────
-  function addItemRow(name = '', qty = '') {
+  function addItemRow(itemName = '', qty = '') {
     const list = document.getElementById('itemsList');
-    const row = document.createElement('div');
+    const row  = document.createElement('div');
     row.className = 'item-row';
+
+    const hygieneOptions   = HYGIENE_ITEMS.map(i =>
+      `<option value="${i}" ${i === itemName ? 'selected' : ''}>${i}</option>`).join('');
+    const householdOptions = HOUSEHOLD_ITEMS.map(i =>
+      `<option value="${i}" ${i === itemName ? 'selected' : ''}>${i}</option>`).join('');
+
     row.innerHTML = `
-      <input type="text"  placeholder="Item name (e.g. Shampoo)" value="${name}" />
-      <input type="number" class="qty" placeholder="Qty" min="0" value="${qty}" />
+      <select class="item-select">
+        <option value="" disabled ${!itemName ? 'selected' : ''}>Select item…</option>
+        <optgroup label="🧴 Hygiene">${hygieneOptions}</optgroup>
+        <optgroup label="🏠 Household">${householdOptions}</optgroup>
+      </select>
+      <input type="number" class="qty" placeholder="Qty" min="1" value="${qty}" />
       <button class="remove-item-btn" onclick="this.closest('.item-row').remove()" title="Remove">×</button>
     `;
     list.appendChild(row);
   }
 
-  function getItemsData() {
-    const items = {};
+  function getDonatedItems() {
+    const items = [];
     document.querySelectorAll('#itemsList .item-row').forEach(row => {
-      const inputs = row.querySelectorAll('input');
-      const name = inputs[0].value.trim();
-      const qty  = parseInt(inputs[1].value, 10);
-      if (name && !isNaN(qty) && qty > 0) {
-        items[name] = qty;
+      const select = row.querySelector('select');
+      const qtyInput = row.querySelector('input.qty');
+      const itemName = select ? select.value : '';
+      const quantity = parseInt(qtyInput ? qtyInput.value : '0', 10);
+      if (itemName && quantity > 0) {
+        items.push({ itemName, quantity });
       }
     });
     return items;
@@ -563,14 +609,11 @@
     }
   }
 
-function formatMonthYear(my) { 
-  if (!my || !my.includes('-')) return my || 'Unknown Month'; 
-  const [year, month] = my.split('-'); 
-  const d = new Date(year, month - 1); 
-  if (isNaN(d)) return my; 
-  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(d); 
-}
-
+  function formatMonthYear(my) {
+    const [year, month] = my.split('-');
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
+      .format(new Date(year, month - 1));
+  }
 
   // ── EDIT EXISTING REPORT ──────────────────────────────────────────
   function startEdit(report) {
@@ -584,10 +627,10 @@ function formatMonthYear(my) {
     document.getElementById('f-newPartnerships').value    = report.newPartnerships || '';
     document.getElementById('f-narrative').value          = report.narrative || '';
 
-    // Populate itemized donations
+    // Populate itemized donations from donatedItems array
     document.getElementById('itemsList').innerHTML = '';
-    const items = report.itemsData || {};
-    Object.entries(items).forEach(([name, qty]) => addItemRow(name, qty));
+    const items = report.donatedItems || [];
+    items.forEach(item => addItemRow(item.itemName, item.quantity));
 
     // Show edit banner
     document.getElementById('editBannerMonth').textContent = formatMonthYear(report.monthYear);
@@ -629,7 +672,7 @@ function formatMonthYear(my) {
       monetaryDonations:   numVal('f-monetaryDonations'),
       newPartnerships:     numVal('f-newPartnerships'),
       narrative:           val('f-narrative'),
-      itemsData:           getItemsData(),
+      donatedItems:        getDonatedItems(),
     };
 
     const isEdit   = !!editingId;

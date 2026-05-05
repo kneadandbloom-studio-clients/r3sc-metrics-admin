@@ -2,8 +2,11 @@
    netlify/functions/update-monthly-report.js
    The R3SC — Update an existing monthly impact report
 
+   Deletes existing DonatedItems rows for this report and
+   recreates them from the submitted list.
+
    Required env vars:
-     ADMIN_PASSWORD     — shared admin password
+     ADMIN_PASSWORDS    — comma-separated admin passwords
      AIRTABLE_API_KEY   — your Airtable PAT
      AIRTABLE_BASE_ID   — your R3SC base ID
    ============================================================ */
@@ -17,6 +20,63 @@ const CORS_HEADERS = {
 
 const Airtable = require("airtable");
 
+const ITEM_TYPE_MAP = {
+  "Body Wash":           "Hygiene",
+  "Conditioner":         "Hygiene",
+  "Deodorant":           "Hygiene",
+  "Hand Sanitizer":      "Hygiene",
+  "Hand Soap":           "Hygiene",
+  "Lotion":              "Hygiene",
+  "Shampoo":             "Hygiene",
+  "Soap (Bar)":          "Hygiene",
+  "Toothbrush":          "Hygiene",
+  "Toothpaste":          "Hygiene",
+  "All-Purpose Cleaner": "Household",
+  "Bleach":              "Household",
+  "Broom":               "Household",
+  "Dish Detergent":      "Household",
+  "Laundry Detergent":   "Household",
+  "Mop":                 "Household",
+  "Paper Towels":        "Household",
+  "Sponge":              "Household",
+  "Toilet Tissue":       "Household",
+  "Trash Bags":          "Household",
+};
+
+function isValidPassword(submitted) {
+  const stored = process.env.ADMIN_PASSWORDS || process.env.ADMIN_PASSWORD || "";
+  return stored.split(",").map(p => p.trim()).includes(submitted);
+}
+
+async function replaceDonatedItems(base, reportRecordId, items) {
+  // Delete existing
+  const existing = await base("DonatedItems")
+    .select({ filterByFormula: `FIND("${reportRecordId}", ARRAYJOIN({monthYear}))` })
+    .all();
+
+  if (existing.length > 0) {
+    const ids = existing.map(r => r.id);
+    for (let i = 0; i < ids.length; i += 10) {
+      await base("DonatedItems").destroy(ids.slice(i, i + 10));
+    }
+  }
+
+  // Recreate
+  if (!items || items.length === 0) return;
+  const valid = items.filter(i => i.itemName && i.quantity > 0);
+  for (let i = 0; i < valid.length; i += 10) {
+    const batch = valid.slice(i, i + 10).map(item => ({
+      fields: {
+        itemType:  ITEM_TYPE_MAP[item.itemName] || "Hygiene",
+        itemName:  item.itemName,
+        quantity:  item.quantity,
+        monthYear: [reportRecordId],
+      },
+    }));
+    await base("DonatedItems").create(batch);
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
@@ -25,7 +85,6 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
-  // ── Auth ─────────────────────────────────────────────────
   let body;
   try {
     body = JSON.parse(event.body || "{}");
@@ -33,7 +92,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "Invalid request body." }) };
   }
 
-  if (!process.env.ADMIN_PASSWORD || body.password !== process.env.ADMIN_PASSWORD) {
+  if (!isValidPassword(body.password)) {
     return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unauthorized" }) };
   }
 
@@ -55,8 +114,10 @@ exports.handler = async (event) => {
       peopleServed:        body.peopleServed         || 0,
       locationsServed:     body.locationsServed      || "",
       narrative:           body.narrative            || "",
-      itemsData:           JSON.stringify(body.itemsData || {}),
     });
+
+    // Replace donated items for this report
+    await replaceDonatedItems(base, body.id, body.donatedItems || []);
 
     console.log(`Monthly report updated: ${updated.id} — ${body.monthYear}`);
 

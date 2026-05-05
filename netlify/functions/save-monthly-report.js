@@ -2,8 +2,11 @@
    netlify/functions/save-monthly-report.js
    The R3SC — Create a new monthly impact report
 
+   After creating the MonthlyReports row, saves any donated
+   items as individual rows in the DonatedItems table.
+
    Required env vars:
-     ADMIN_PASSWORD     — shared admin password
+     ADMIN_PASSWORDS    — comma-separated admin passwords
      AIRTABLE_API_KEY   — your Airtable PAT
      AIRTABLE_BASE_ID   — your R3SC base ID
    ============================================================ */
@@ -17,6 +20,50 @@ const CORS_HEADERS = {
 
 const Airtable = require("airtable");
 
+const ITEM_TYPE_MAP = {
+  "Body Wash":           "Hygiene",
+  "Conditioner":         "Hygiene",
+  "Deodorant":           "Hygiene",
+  "Hand Sanitizer":      "Hygiene",
+  "Hand Soap":           "Hygiene",
+  "Lotion":              "Hygiene",
+  "Shampoo":             "Hygiene",
+  "Soap (Bar)":          "Hygiene",
+  "Toothbrush":          "Hygiene",
+  "Toothpaste":          "Hygiene",
+  "All-Purpose Cleaner": "Household",
+  "Bleach":              "Household",
+  "Broom":               "Household",
+  "Dish Detergent":      "Household",
+  "Laundry Detergent":   "Household",
+  "Mop":                 "Household",
+  "Paper Towels":        "Household",
+  "Sponge":              "Household",
+  "Toilet Tissue":       "Household",
+  "Trash Bags":          "Household",
+};
+
+function isValidPassword(submitted) {
+  const stored = process.env.ADMIN_PASSWORDS || process.env.ADMIN_PASSWORD || "";
+  return stored.split(",").map(p => p.trim()).includes(submitted);
+}
+
+async function saveDonatedItems(base, reportRecordId, items) {
+  if (!items || items.length === 0) return;
+  const valid = items.filter(i => i.itemName && i.quantity > 0);
+  for (let i = 0; i < valid.length; i += 10) {
+    const batch = valid.slice(i, i + 10).map(item => ({
+      fields: {
+        itemType:  ITEM_TYPE_MAP[item.itemName] || "Hygiene",
+        itemName:  item.itemName,
+        quantity:  item.quantity,
+        monthYear: [reportRecordId],
+      },
+    }));
+    await base("DonatedItems").create(batch);
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
@@ -25,7 +72,6 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
-  // ── Auth ─────────────────────────────────────────────────
   let body;
   try {
     body = JSON.parse(event.body || "{}");
@@ -33,11 +79,10 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "Invalid request body." }) };
   }
 
-  if (!process.env.ADMIN_PASSWORD || body.password !== process.env.ADMIN_PASSWORD) {
+  if (!isValidPassword(body.password)) {
     return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unauthorized" }) };
   }
 
-  // ── Validate ──────────────────────────────────────────────
   if (!body.monthYear) {
     return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "monthYear is required." }) };
   }
@@ -60,7 +105,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // ✅ Airtable auto-generates record IDs — do NOT pass an id field
+    // Create the MonthlyReports row
     const record = await base("MonthlyReports").create({
       monthYear:           body.monthYear,
       hygieneItems:        body.hygieneItems        || 0,
@@ -70,8 +115,10 @@ exports.handler = async (event) => {
       peopleServed:        body.peopleServed         || 0,
       locationsServed:     body.locationsServed      || "",
       narrative:           body.narrative            || "",
-      itemsData:           JSON.stringify(body.itemsData || {}),
     });
+
+    // Save donated items linked to this report
+    await saveDonatedItems(base, record.id, body.donatedItems || []);
 
     console.log(`Monthly report created: ${record.id} — ${body.monthYear}`);
 
