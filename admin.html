@@ -563,11 +563,14 @@
     }
   }
 
-  function formatMonthYear(my) {
-    const [year, month] = my.split('-');
-    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
-      .format(new Date(year, month - 1));
-  }
+function formatMonthYear(my) { 
+  if (!my || !my.includes('-')) return my || 'Unknown Month'; 
+  const [year, month] = my.split('-'); 
+  const d = new Date(year, month - 1); 
+  if (isNaN(d)) return my; 
+  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(d); 
+}
+
 
   // ── EDIT EXISTING REPORT ──────────────────────────────────────────
   function startEdit(report) {
