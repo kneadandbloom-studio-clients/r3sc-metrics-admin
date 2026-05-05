@@ -17,10 +17,7 @@
   "author": "Allie C.",
   "license": "MIT",
   "dependencies": {
-    "airtable": "^2.0.0",
-    "uuid": "^9.0.0"
-  },
-  "devDependencies": {
-    "netlify-cli": "^17.0.0"
+    "airtable": "^0.12.2",
+    "uuid": "^14.0.0"
   }
 }
