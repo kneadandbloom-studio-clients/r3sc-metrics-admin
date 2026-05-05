@@ -1,428 +1,720 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R3SC Metrics Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="css/styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R3SC Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --teal:       #2a7a6f;
+      --teal-dk:    #1d5a52;
+      --teal-pale:  #e8f4f2;
+      --teal-mid:   #b2d8d3;
+      --red:        #c0392b;
+      --red-pale:   #fdf0ef;
+      --gold:       #d4a843;
+      --gold-pale:  #fdf6e3;
+      --slate:      #2c3e50;
+      --muted:      #7f8c8d;
+      --border:     #dce3e2;
+      --bg:         #f4f7f6;
+      --white:      #ffffff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: 'Roboto', sans-serif;
+      color: var(--slate);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── LOCK SCREEN ───────────────────────────────────── */
+    #lockScreen {
+      width: 100%; max-width: 400px;
+      background: var(--white);
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      box-shadow: 0 12px 48px rgba(44,62,80,.12);
+      padding: 48px 40px 40px;
+      text-align: center;
+      margin-top: 10vh;
+    }
+    .lock-icon { font-size: 2.4rem; margin-bottom: 16px; display: block; }
+    .lock-eyebrow {
+      font-size: 10px; letter-spacing: .28em; text-transform: uppercase;
+      color: var(--teal); font-weight: 700; margin-bottom: 10px;
+    }
+    .lock-title {
+      font-size: 1.7rem; font-weight: 700; color: var(--slate);
+      line-height: 1.2; margin-bottom: 6px;
+    }
+    .lock-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.55; }
+    .lock-field {
+      width: 100%; padding: 13px 16px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'Roboto', sans-serif; font-size: 14px;
+      color: var(--slate); background: var(--bg); outline: none;
+      transition: border-color .2s; text-align: center; letter-spacing: .1em;
+      margin-bottom: 14px;
+    }
+    .lock-field:focus { border-color: var(--teal); background: var(--white); }
+    .lock-field::placeholder { color: var(--border); letter-spacing: .05em; }
+    .lock-btn {
+      width: 100%; padding: 14px; background: var(--teal);
+      color: var(--white); font-family: 'Roboto', sans-serif;
+      font-size: 13.5px; font-weight: 700; letter-spacing: .06em;
+      border: none; border-radius: 10px; cursor: pointer;
+      transition: background .2s, transform .15s;
+    }
+    .lock-btn:hover { background: var(--teal-dk); }
+    .lock-btn:active { transform: scale(.98); }
+    .lock-error { font-size: 12.5px; color: var(--red); margin-top: 12px; display: none; }
+    .lock-error.visible { display: block; }
+
+    /* ── ADMIN PANEL ───────────────────────────────────── */
+    #adminPanel { display: none; width: 100%; max-width: 660px; flex-direction: column; gap: 20px; padding-bottom: 48px; }
+    #adminPanel.visible { display: flex; }
+
+    .admin-header {
+      background: var(--teal);
+      border-radius: 20px; padding: 32px 36px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .admin-header::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(-45deg, transparent, transparent 24px, rgba(255,255,255,.04) 24px, rgba(255,255,255,.04) 25px);
+      pointer-events: none;
+    }
+    .admin-eyebrow {
+      font-size: 10px; letter-spacing: .28em; text-transform: uppercase;
+      color: var(--teal-mid); font-weight: 700; margin-bottom: 10px;
+    }
+    .admin-title {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 700; color: var(--white); line-height: 1.15;
+    }
+    .admin-sub { font-size: 12.5px; color: rgba(255,255,255,.5); margin-top: 8px; }
+
+    /* ── ACCORDION CARDS ───────────────────────────────── */
+    .admin-card {
+      background: var(--white); border-radius: 16px;
+      border: 1.5px solid var(--border);
+      box-shadow: 0 4px 20px rgba(44,62,80,.07); overflow: hidden;
+    }
+    .card-header {
+      padding: 20px 24px; display: flex; align-items: center;
+      justify-content: space-between; cursor: pointer; user-select: none;
+      transition: background .15s; border-bottom: 1.5px solid transparent;
+    }
+    .card-header:hover { background: var(--teal-pale); }
+    .admin-card.open .card-header { border-bottom-color: var(--border); }
+    .card-header-text { flex: 1; }
+    .card-label { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); font-weight: 700; margin-bottom: 4px; }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: var(--slate); }
+    .card-chevron {
+      font-size: 11px; color: var(--muted); margin-left: 12px; flex-shrink: 0;
+      transition: transform .25s cubic-bezier(.22,1,.36,1);
+    }
+    .admin-card.open .card-chevron { transform: rotate(180deg); }
+    .card-body { display: none; }
+    .admin-card.open .card-body { display: block; }
+
+    /* ── FORM INSIDE CARD ──────────────────────────────── */
+    .form-inner { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .form-input, .form-textarea {
+      padding: 11px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-family: 'Roboto', sans-serif;
+      font-size: 14px; color: var(--slate); background: var(--bg);
+      outline: none; transition: border-color .2s, background .2s;
+      width: 100%;
+    }
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--teal); background: var(--white);
+    }
+    .form-input.error, .form-textarea.error { border-color: var(--red); }
+    .form-textarea { resize: vertical; min-height: 110px; }
+    .form-hint { font-size: 11.5px; color: var(--muted); }
+    .field-error { font-size: 11.5px; color: var(--red); display: none; }
+    .field-error.visible { display: block; }
+
+    /* Items sub-grid */
+    .items-section { border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .items-header {
+      padding: 12px 16px; background: var(--teal-pale);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .items-header-label { font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--teal-dk); }
+    .add-item-btn {
+      font-size: 12px; font-weight: 700; color: var(--teal);
+      background: none; border: 1.5px solid var(--teal-mid);
+      border-radius: 6px; padding: 4px 10px; cursor: pointer;
+      transition: background .15s;
+    }
+    .add-item-btn:hover { background: var(--teal-mid); }
+    .items-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .item-row { display: flex; gap: 10px; align-items: center; }
+    .item-row input {
+      padding: 9px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: 'Roboto', sans-serif;
+      font-size: 13.5px; color: var(--slate); background: var(--bg);
+      outline: none; flex: 1; transition: border-color .2s;
+    }
+    .item-row input:focus { border-color: var(--teal); background: var(--white); }
+    .item-row input.qty { flex: 0 0 80px; text-align: right; }
+    .remove-item-btn {
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: 16px; line-height: 1; padding: 4px; transition: color .15s;
+    }
+    .remove-item-btn:hover { color: var(--red); }
+
+    /* ── RESULT CARD ───────────────────────────────────── */
+    .result-card {
+      border-radius: 12px; padding: 0; max-height: 0; overflow: hidden;
+      transition: max-height .35s ease, padding .25s ease;
+      margin: 0 24px;
+    }
+    .result-card.visible { max-height: 300px; padding: 18px; margin-bottom: 4px; border: 1.5px solid var(--border); }
+    .result-card.success { border-color: var(--teal-mid); background: var(--teal-pale); }
+    .result-card.error   { border-color: #f0c0c0; background: var(--red-pale); }
+    .result-title { font-size: 14px; font-weight: 700; color: var(--slate); margin-bottom: 6px; }
+    .result-card.success .result-title { color: var(--teal-dk); }
+    .result-card.error   .result-title { color: var(--red); }
+    .result-body { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+    /* ── EXISTING REPORTS LIST ─────────────────────────── */
+    .reports-list { padding: 0; }
+    .report-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      transition: background .15s; gap: 12px;
+    }
+    .report-row:last-child { border-bottom: none; }
+    .report-row:hover { background: var(--teal-pale); }
+    .report-row-month { font-size: 14px; font-weight: 500; color: var(--slate); }
+    .report-row-meta { font-size: 12px; color: var(--muted); }
+    .report-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .row-btn {
+      font-size: 12px; font-weight: 700; padding: 6px 12px;
+      border-radius: 7px; border: 1.5px solid; cursor: pointer;
+      transition: background .15s, color .15s; background: none;
+    }
+    .row-btn.edit { border-color: var(--teal-mid); color: var(--teal); }
+    .row-btn.edit:hover { background: var(--teal); color: var(--white); }
+    .row-btn.del  { border-color: #f0c0c0; color: var(--red); }
+    .row-btn.del:hover  { background: var(--red); color: var(--white); }
+
+    .reports-loading { padding: 32px 24px; text-align: center; color: var(--muted); font-size: 13.5px; }
+    .reports-empty   { padding: 32px 24px; text-align: center; color: var(--muted); font-size: 13.5px; }
+
+    /* ── ACTION BUTTONS ────────────────────────────────── */
+    .action-wrap { padding: 20px 24px 24px; display: flex; gap: 10px; align-items: center; }
+    .action-btn {
+      padding: 13px 22px; background: var(--teal); color: var(--white);
+      font-family: 'Roboto', sans-serif; font-size: 13.5px; font-weight: 700;
+      border: none; border-radius: 10px; cursor: pointer;
+      transition: background .2s, transform .15s; display: flex; align-items: center; gap: 8px;
+    }
+    .action-btn:hover { background: var(--teal-dk); }
+    .action-btn:active { transform: scale(.98); }
+    .action-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .action-btn.danger { background: var(--red); }
+    .action-btn.danger:hover { background: #a93226; }
+    .action-btn.secondary {
+      background: none; color: var(--muted); border: 1.5px solid var(--border);
+    }
+    .action-btn.secondary:hover { background: var(--bg); color: var(--slate); }
+
+    .btn-spinner {
+      width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35);
+      border-top-color: white; border-radius: 50%;
+      animation: spin .7s linear infinite; display: none;
+    }
+    .action-btn.loading .btn-spinner { display: inline-block; }
+    .action-btn.loading .btn-text   { opacity: .6; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .divider { height: 1px; background: var(--border); margin: 0; }
+
+    /* ── LOGOUT BTN ────────────────────────────────────── */
+    .logout-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 12.5px; color: var(--muted); text-decoration: underline;
+      text-underline-offset: 3px; padding: 0; align-self: center;
+      transition: color .15s;
+    }
+    .logout-btn:hover { color: var(--red); }
+
+    /* ── EDIT MODE BANNER ──────────────────────────────── */
+    .edit-banner {
+      background: var(--gold-pale); border: 1.5px solid var(--gold);
+      border-radius: 10px; padding: 10px 14px; font-size: 13px;
+      color: #7a5a10; display: none; align-items: center; gap: 10px;
+    }
+    .edit-banner.visible { display: flex; }
+    .edit-banner strong { font-weight: 700; }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div>
-                <h1>R3SC Metrics Dashboard</h1>
-                <p class="header-subtitle">Monthly Impact Reporting System</p>
-            </div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+
+  <!-- ── LOCK SCREEN ────────────────────────────────────── -->
+  <div id="lockScreen">
+    <span class="lock-icon">🔒</span>
+    <p class="lock-eyebrow">The R3SC</p>
+    <h1 class="lock-title">Admin Panel</h1>
+    <p class="lock-sub">Enter your admin password to manage monthly impact reports.</p>
+    <input
+      id="passwordInput"
+      class="lock-field"
+      type="password"
+      placeholder="••••••••"
+      autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') unlock()"
+    />
+    <button class="lock-btn" onclick="unlock()">Enter Admin Panel</button>
+    <p class="lock-error" id="lockError">Incorrect password — try again.</p>
+  </div>
+
+  <!-- ── ADMIN PANEL ────────────────────────────────────── -->
+  <div id="adminPanel">
+
+    <div class="admin-header">
+      <p class="admin-eyebrow">The R3SC · Admin</p>
+      <h1 class="admin-title">Monthly Impact Reports</h1>
+      <p class="admin-sub">Restoring Resources, Respect &amp; Community</p>
     </div>
 
-    <div class="container">
-        <div class="action-bar">
-            <button class="btn btn-primary" onclick="openNewReportModal()">
-                + New Monthly Report
-            </button>
+    <!-- ── CARD 1: NEW MONTHLY REPORT (accordion) ─────── -->
+    <div class="admin-card" id="card-new-report">
+      <div class="card-header" onclick="toggleCard('card-new-report')">
+        <div class="card-header-text">
+          <p class="card-label">Monthly Impact</p>
+          <h2 class="card-title">New Monthly Report</h2>
+        </div>
+        <span class="card-chevron">▼</span>
+      </div>
+
+      <div class="card-body">
+        <div class="form-inner">
+
+          <!-- Edit mode banner -->
+          <div class="edit-banner" id="editBanner">
+            <span>✏️</span>
+            <span>Editing report: <strong id="editBannerMonth"></strong></span>
+            <button class="action-btn secondary" style="margin-left:auto;padding:6px 12px;font-size:12px;" onclick="cancelEdit()">Cancel Edit</button>
+          </div>
+
+          <!-- Month/Year -->
+          <div class="form-group">
+            <label class="form-label" for="f-monthYear">Month / Year <span style="color:var(--red)">*</span></label>
+            <input class="form-input" id="f-monthYear" type="month" />
+            <p class="field-error" id="err-monthYear">Month is required.</p>
+          </div>
+
+          <!-- Row: People Served + Locations -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="f-peopleServed">People Served</label>
+              <input class="form-input" id="f-peopleServed" type="number" min="0" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="f-locationsServed">Locations Served</label>
+              <input class="form-input" id="f-locationsServed" type="text" placeholder="e.g. Downtown, Eastside" />
+            </div>
+          </div>
+
+          <!-- Row: Hygiene Items + House Warming Baskets -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="f-hygieneItems">Hygiene Items Donated</label>
+              <input class="form-input" id="f-hygieneItems" type="number" min="0" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="f-houseWarmingBaskets">House Warming Baskets</label>
+              <input class="form-input" id="f-houseWarmingBaskets" type="number" min="0" placeholder="0" />
+            </div>
+          </div>
+
+          <!-- Row: Monetary Donations + New Partnerships -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="f-monetaryDonations">Monetary Donations ($)</label>
+              <input class="form-input" id="f-monetaryDonations" type="number" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="f-newPartnerships">New Partnerships</label>
+              <input class="form-input" id="f-newPartnerships" type="number" min="0" placeholder="0" />
+            </div>
+          </div>
+
+          <!-- Narrative -->
+          <div class="form-group">
+            <label class="form-label" for="f-narrative">Narrative / Impact Story</label>
+            <textarea class="form-textarea" id="f-narrative" placeholder="Share the human story behind this month's numbers…"></textarea>
+          </div>
+
+          <!-- Itemized Donations -->
+          <div class="form-group">
+            <label class="form-label">Itemized Donations <span class="form-hint" style="text-transform:none;letter-spacing:0;">(optional)</span></label>
+            <div class="items-section">
+              <div class="items-header">
+                <span class="items-header-label">Item Breakdown</span>
+                <button class="add-item-btn" onclick="addItemRow()">+ Add Item</button>
+              </div>
+              <div class="items-list" id="itemsList">
+                <!-- item rows injected here -->
+              </div>
+            </div>
+            <p class="form-hint">Track individual hygiene or household items and their quantities.</p>
+          </div>
+
+        </div><!-- /.form-inner -->
+
+        <!-- Result feedback -->
+        <div class="result-card" id="newReportResult">
+          <div class="result-title" id="newReportResultTitle"></div>
+          <div class="result-body" id="newReportResultBody"></div>
         </div>
 
-        <div class="reports-section">
-            <h2 class="section-title">Monthly Reports</h2>
-            <div id="reportsContainer" class="reports-grid">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 15px;">Loading reports...</p>
-                </div>
-            </div>
+        <!-- Submit actions -->
+        <div class="action-wrap">
+          <button class="action-btn" id="submitBtn" onclick="submitReport()">
+            <div class="btn-spinner"></div>
+            <span class="btn-text">Save Report</span>
+          </button>
+          <button class="action-btn secondary" onclick="resetForm()">Clear Form</button>
         </div>
+
+      </div><!-- /.card-body -->
+    </div><!-- /#card-new-report -->
+
+    <!-- ── CARD 2: EXISTING REPORTS ───────────────────── -->
+    <div class="admin-card" id="card-reports">
+      <div class="card-header" onclick="toggleCard('card-reports')">
+        <div class="card-header-text">
+          <p class="card-label">Manage</p>
+          <h2 class="card-title">Existing Reports</h2>
+        </div>
+        <span class="card-chevron">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="reports-list" id="reportsList">
+          <div class="reports-loading">Loading reports…</div>
+        </div>
+
+        <!-- Delete result feedback -->
+        <div class="result-card" id="deleteResult" style="margin-top:8px;">
+          <div class="result-title" id="deleteResultTitle"></div>
+          <div class="result-body" id="deleteResultBody"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Report Form Modal -->
-    <div id="reportModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal()">&times;</button>
-            <div class="modal-header">
-                <h2 id="modalTitle">New Monthly Report</h2>
-            </div>
-            <form id="reportForm" onsubmit="handleSubmit(event)" netlify>
-                <!-- Basic Info Section -->
-                <div class="form-section">
-                    <div class="form-section-title">Report Details</div>
-                    <div class="form-group">
-                        <label for="monthYear">Month & Year *</label>
-                        <input type="month" id="monthYear" required>
-                    </div>
-                </div>
+    <button class="logout-btn" onclick="logout()">Sign out of admin panel</button>
 
-                <!-- Donated Items Section -->
-                <div class="form-section">
-                    <div class="form-section-title">Hygiene & Household Items Donated</div>
-                    <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Check items donated this month and enter quantities:</p>
-                    <table class="items-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 25px;"></th>
-                                <th>Item</th>
-                                <th style="width: 100px;">Quantity</th>
-                            </tr>
-                        </thead>
-                        <tbody id="itemsTableBody">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                    <div class="items-total">
-                        Total Items: <span id="itemsTotal">0</span>
-                    </div>
-                </div>
+  </div><!-- /#adminPanel -->
 
-                <!-- Impact Metrics Section -->
-                <div class="form-section">
-                    <div class="form-section-title">Impact Metrics</div>
-                    <div class="form-group">
-                        <label for="monetaryDonations">Monetary Donations ($)</label>
-                        <input type="number" id="monetaryDonations" min="0" step="0.01" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="newPartnerships">New Partnerships</label>
-                        <input type="number" id="newPartnerships" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="houseWarmingBaskets">House Warming Baskets Donated</label>
-                        <input type="number" id="houseWarmingBaskets" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="peopleServed">People/Homes Served *</label>
-                        <input type="number" id="peopleServed" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="locationsServed">Locations Served (City/Neighborhood) *</label>
-                        <textarea id="locationsServed" required placeholder="Oakland, Berkeley, Fremont, etc."></textarea>
-                    </div>
-                </div>
+<script>
+  let adminPassword = '';
+  let editingId = null; // Airtable record ID when in edit mode
 
-                <!-- Narrative Section -->
-                <div class="form-section">
-                    <div class="form-section-title">Impact Narrative</div>
-                    <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Auto-generated narrative preview below. Edit to add personal touches or stories:</p>
-                    <div class="narrative-preview" id="narrativePreview">
-                        Narrative will appear here as you fill in the form...
-                    </div>
-                    <div class="form-group">
-                        <label for="narrative">Edit Narrative</label>
-                        <textarea id="narrative" placeholder="Customize the auto-generated narrative..."></textarea>
-                    </div>
-                </div>
+  // ── AUTH ──────────────────────────────────────────────────────────
+  function unlock() {
+    const pw = document.getElementById('passwordInput').value.trim();
+    if (!pw) return;
+    adminPassword = pw;
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('adminPanel').classList.add('visible');
+    loadReports();
+  }
 
-                <button type="submit" class="submit-btn">Save Report</button>
-            </form>
+  function logout() {
+    adminPassword = '';
+    editingId = null;
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('lockError').classList.remove('visible');
+    document.getElementById('lockScreen').style.display = '';
+    document.getElementById('adminPanel').classList.remove('visible');
+    resetForm();
+  }
+
+  // ── ACCORDION ─────────────────────────────────────────────────────
+  function toggleCard(id) {
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  // ── ITEMIZED DONATIONS ────────────────────────────────────────────
+  function addItemRow(name = '', qty = '') {
+    const list = document.getElementById('itemsList');
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <input type="text"  placeholder="Item name (e.g. Shampoo)" value="${name}" />
+      <input type="number" class="qty" placeholder="Qty" min="0" value="${qty}" />
+      <button class="remove-item-btn" onclick="this.closest('.item-row').remove()" title="Remove">×</button>
+    `;
+    list.appendChild(row);
+  }
+
+  function getItemsData() {
+    const items = {};
+    document.querySelectorAll('#itemsList .item-row').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      const name = inputs[0].value.trim();
+      const qty  = parseInt(inputs[1].value, 10);
+      if (name && !isNaN(qty) && qty > 0) {
+        items[name] = qty;
+      }
+    });
+    return items;
+  }
+
+  // ── FORM HELPERS ──────────────────────────────────────────────────
+  function val(id)     { return document.getElementById(id).value.trim(); }
+  function numVal(id)  { return parseFloat(document.getElementById(id).value) || 0; }
+
+  function resetForm() {
+    editingId = null;
+    ['f-monthYear','f-peopleServed','f-locationsServed','f-hygieneItems',
+     'f-houseWarmingBaskets','f-monetaryDonations','f-newPartnerships','f-narrative'
+    ].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('itemsList').innerHTML = '';
+    document.getElementById('editBanner').classList.remove('visible');
+    hideResult('newReportResult');
+    clearErrors();
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.field-error.visible').forEach(el => el.classList.remove('visible'));
+    document.querySelectorAll('.form-input.error, .form-textarea.error').forEach(el => el.classList.remove('error'));
+  }
+
+  function showFieldError(fieldId, errId) {
+    document.getElementById(fieldId).classList.add('error');
+    document.getElementById(errId).classList.add('visible');
+  }
+
+  function showResult(cardId, titleId, bodyId, type, title, body) {
+    const card = document.getElementById(cardId);
+    card.className = `result-card visible ${type}`;
+    document.getElementById(titleId).textContent = title;
+    document.getElementById(bodyId).innerHTML = body;
+  }
+
+  function hideResult(cardId) {
+    document.getElementById(cardId).className = 'result-card';
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.classList.toggle('loading', loading);
+    btn.disabled = loading;
+  }
+
+  // ── LOAD EXISTING REPORTS ─────────────────────────────────────────
+  async function loadReports() {
+    const list = document.getElementById('reportsList');
+    list.innerHTML = '<div class="reports-loading">Loading reports…</div>';
+
+    try {
+      const res  = await fetch('/.netlify/functions/get-monthly-reports');
+      const data = await res.json();
+
+      if (!data.reports || data.reports.length === 0) {
+        list.innerHTML = '<div class="reports-empty">No reports yet. Create one above.</div>';
+        return;
+      }
+
+      const sorted = [...data.reports].sort((a, b) =>
+        new Date(b.monthYear) - new Date(a.monthYear)
+      );
+
+      list.innerHTML = sorted.map(r => `
+        <div class="report-row">
+          <div>
+            <div class="report-row-month">${formatMonthYear(r.monthYear)}</div>
+            <div class="report-row-meta">${r.peopleServed} people served · ${r.hygieneItems} items · ${r.houseWarmingBaskets} baskets</div>
+          </div>
+          <div class="report-row-actions">
+            <button class="row-btn edit" onclick="startEdit(${JSON.stringify(r).replace(/"/g,'&quot;')})">Edit</button>
+            <button class="row-btn del"  onclick="deleteReport('${r.id}', '${r.monthYear}')">Delete</button>
+          </div>
         </div>
-    </div>
+      `).join('');
 
-    <script>
-        const ITEMS_LIST = [
-            'Toothpaste', 'Toothbrushes', 'Soap', 'Body Wash', 'Hand Soap',
-            'Hand Sanitizer', 'Shampoo', 'Conditioner', 'Lotion', 'Deodorant',
-            'Dish Detergent', 'All-Purpose Cleaner', 'Laundry Detergent', 'Bleach',
-            'Paper Towels', 'Toilet Tissue', 'Trash Bags', 'Brooms', 'Mops', 'Sponges'
-        ];
+    } catch (err) {
+      list.innerHTML = `<div class="reports-empty" style="color:var(--red);">Failed to load: ${err.message}</div>`;
+    }
+  }
 
-        let allReports = [];
-        let currentEditingId = null;
-        let currentItems = {};
+  function formatMonthYear(my) {
+    const [year, month] = my.split('-');
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
+      .format(new Date(year, month - 1));
+  }
 
-        // Check authentication
-        if (localStorage.getItem('r3sc_authenticated') !== 'true') {
-            window.location.hash = '#/';
-        }
+  // ── EDIT EXISTING REPORT ──────────────────────────────────────────
+  function startEdit(report) {
+    editingId = report.id;
+    document.getElementById('f-monthYear').value          = report.monthYear;
+    document.getElementById('f-peopleServed').value       = report.peopleServed || '';
+    document.getElementById('f-locationsServed').value    = report.locationsServed || '';
+    document.getElementById('f-hygieneItems').value       = report.hygieneItems || '';
+    document.getElementById('f-houseWarmingBaskets').value= report.houseWarmingBaskets || '';
+    document.getElementById('f-monetaryDonations').value  = report.monetaryDonations || '';
+    document.getElementById('f-newPartnerships').value    = report.newPartnerships || '';
+    document.getElementById('f-narrative').value          = report.narrative || '';
 
-        // Load reports on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadReports();
-            populateItemsTable();
-            setupFormListeners();
-        });
+    // Populate itemized donations
+    document.getElementById('itemsList').innerHTML = '';
+    const items = report.itemsData || {};
+    Object.entries(items).forEach(([name, qty]) => addItemRow(name, qty));
 
-        function populateItemsTable() {
-            const tbody = document.getElementById('itemsTableBody');
-            tbody.innerHTML = ITEMS_LIST.map((item, idx) => `
-                <tr>
-                    <td><input type="checkbox" data-item="${item}" class="item-checkbox"></td>
-                    <td class="item-name">${item}</td>
-                    <td><input type="number" min="0" value="0" class="item-quantity" data-item="${item}"></td>
-                </tr>
-            `).join('');
+    // Show edit banner
+    document.getElementById('editBannerMonth').textContent = formatMonthYear(report.monthYear);
+    document.getElementById('editBanner').classList.add('visible');
 
-            // Add listeners to checkboxes and quantity inputs
-            document.querySelectorAll('.item-checkbox, .item-quantity').forEach(el => {
-                el.addEventListener('change', updateNarrativePreview);
-            });
-        }
+    hideResult('newReportResult');
 
-        function setupFormListeners() {
-            const inputs = ['monthYear', 'monetaryDonations', 'newPartnerships', 'houseWarmingBaskets', 'peopleServed', 'locationsServed'];
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener('change', updateNarrativePreview);
-            });
-        }
+    // Open the new report card and scroll to it
+    document.getElementById('card-new-report').classList.add('open');
+    document.getElementById('card-new-report').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
-        function updateNarrativePreview() {
-            const monthYear = document.getElementById('monthYear').value;
-            const peopleServed = parseInt(document.getElementById('peopleServed').value) || 0;
-            const houseWarmingBaskets = parseInt(document.getElementById('houseWarmingBaskets').value) || 0;
-            const locationsServed = document.getElementById('locationsServed').value.trim();
-            
-            // Calculate total items
-            let totalItems = 0;
-            const selectedItems = [];
-            document.querySelectorAll('.item-checkbox:checked').forEach(checkbox => {
-                const item = checkbox.dataset.item;
-                const qty = parseInt(document.querySelector(`input[data-item="${item}"][type="number"]`).value) || 0;
-                if (qty > 0) {
-                    totalItems += qty;
-                    selectedItems.push(`${qty} ${item.toLowerCase()}`);
-                }
-            });
+  function cancelEdit() {
+    resetForm();
+  }
 
-            if (!monthYear || !peopleServed || !locationsServed) {
-                document.getElementById('narrativePreview').textContent = 'Narrative will appear here as you fill in the form...';
-                return;
-            }
+  // ── SUBMIT (create or update) ─────────────────────────────────────
+  async function submitReport() {
+    clearErrors();
+    hideResult('newReportResult');
 
-            // Format month/year
-            const [year, month] = monthYear.split('-');
-            const date = new Date(year, month - 1);
-            const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(date);
-            const fullYear = new Intl.DateTimeFormat('en-US', { year: 'numeric' }).format(date);
+    // Validate
+    let valid = true;
+    if (!val('f-monthYear')) {
+      showFieldError('f-monthYear', 'err-monthYear');
+      valid = false;
+    }
+    if (!valid) return;
 
-            const itemList = selectedItems.length > 0 ? `This month's donations included ${selectedItems.join(', ')}.` : '';
+    setLoading('submitBtn', true);
 
-            const narrative = `In ${monthName} ${fullYear}, R3SC donated ${totalItems} hygiene and household items and ${houseWarmingBaskets} house-warming basket${houseWarmingBaskets !== 1 ? 's' : ''} to serve ${peopleServed} people/home${peopleServed !== 1 ? 's' : ''} across ${locationsServed}. ${itemList} Together, we continue restoring resources, respect, and community.`;
+    const payload = {
+      password:            adminPassword,
+      monthYear:           val('f-monthYear'),
+      peopleServed:        numVal('f-peopleServed'),
+      locationsServed:     val('f-locationsServed'),
+      hygieneItems:        numVal('f-hygieneItems'),
+      houseWarmingBaskets: numVal('f-houseWarmingBaskets'),
+      monetaryDonations:   numVal('f-monetaryDonations'),
+      newPartnerships:     numVal('f-newPartnerships'),
+      narrative:           val('f-narrative'),
+      itemsData:           getItemsData(),
+    };
 
-            document.getElementById('narrativePreview').textContent = narrative;
-            document.getElementById('narrative').value = narrative;
-        }
+    const isEdit   = !!editingId;
+    const endpoint = isEdit
+      ? '/.netlify/functions/update-monthly-report'
+      : '/.netlify/functions/save-monthly-report';
 
-        async function loadReports() {
-            try {
-                const response = await fetch('/.netlify/functions/get-monthly-reports');
-                const data = await response.json();
-                allReports = data.reports || [];
-                renderReports();
-            } catch (error) {
-                console.error('Error loading reports:', error);
-                document.getElementById('reportsContainer').innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="empty-state-icon">⚠️</div>
-                        <h3>Unable to load reports</h3>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            }
-        }
+    if (isEdit) payload.id = editingId;
 
-        function renderReports() {
-            const container = document.getElementById('reportsContainer');
-            
-            if (allReports.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="empty-state-icon">📊</div>
-                        <h3>No reports yet</h3>
-                        <p>Create your first monthly report to get started.</p>
-                    </div>
-                `;
-                return;
-            }
+    try {
+      const res  = await fetch(endpoint, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json();
 
-            const sorted = [...allReports].sort((a, b) => 
-                new Date(b.monthYear) - new Date(a.monthYear)
-            );
+      if (res.status === 401) {
+        document.getElementById('lockError').classList.add('visible');
+        logout();
+        return;
+      }
 
-            container.innerHTML = sorted.map(report => `
-                <div class="report-card">
-                    <div class="report-month">${formatMonthYear(report.monthYear)}</div>
-                    <div class="report-stats">
-                        <div class="stat-item">
-                            <div class="stat-label">Items Donated</div>
-                            <div class="stat-value">${report.hygieneItems || 0}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Donations</div>
-                            <div class="stat-value">$${(report.monetaryDonations || 0).toFixed(2)}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Baskets</div>
-                            <div class="stat-value">${report.houseWarmingBaskets || 0}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">People Served</div>
-                            <div class="stat-value">${report.peopleServed || 0}</div>
-                        </div>
-                    </div>
-                    <div class="report-actions">
-                        <button class="view-btn" onclick="viewReport('${report.id}')">View</button>
-                        <button class="edit-btn" onclick="editReport('${report.id}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteReport('${report.id}')">Delete</button>
-                    </div>
-                </div>
-            `).join('');
-        }
+      if (res.status === 409) {
+        showResult('newReportResult','newReportResultTitle','newReportResultBody',
+          'error', '⚠ Duplicate Month', data.error || 'A report for this month already exists.');
+        return;
+      }
 
-        function formatMonthYear(monthYear) {
-            const [year, month] = monthYear.split('-');
-            const date = new Date(year, month - 1);
-            return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date);
-        }
+      if (!res.ok || !data.success) {
+        showResult('newReportResult','newReportResultTitle','newReportResultBody',
+          'error', '⚠ Something went wrong', data.error || 'Unknown error — check Netlify logs.');
+        return;
+      }
 
-        function openNewReportModal() {
-            currentEditingId = null;
-            document.getElementById('reportForm').reset();
-            document.getElementById('modalTitle').textContent = 'New Monthly Report';
-            currentItems = {};
-            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
-            document.querySelectorAll('.item-quantity').forEach(inp => inp.value = 0);
-            document.getElementById('itemsTotal').textContent = '0';
-            updateNarrativePreview();
-            document.getElementById('reportModal').classList.add('show');
-        }
+      showResult('newReportResult','newReportResultTitle','newReportResultBody',
+        'success',
+        isEdit ? '✓ Report Updated' : '✓ Report Saved',
+        `<strong>${formatMonthYear(payload.monthYear)}</strong> has been ${isEdit ? 'updated' : 'saved'} successfully.`
+      );
 
-        function editReport(id) {
-            const report = allReports.find(r => r.id === id);
-            if (!report) return;
+      resetForm();
+      loadReports(); // refresh list
 
-            currentEditingId = id;
-            document.getElementById('monthYear').value = report.monthYear;
-            document.getElementById('monetaryDonations').value = report.monetaryDonations || 0;
-            document.getElementById('newPartnerships').value = report.newPartnerships || 0;
-            document.getElementById('houseWarmingBaskets').value = report.houseWarmingBaskets || 0;
-            document.getElementById('peopleServed').value = report.peopleServed || 0;
-            document.getElementById('locationsServed').value = report.locationsServed || '';
-            document.getElementById('narrative').value = report.narrative || '';
+    } catch (err) {
+      showResult('newReportResult','newReportResultTitle','newReportResultBody',
+        'error', '⚠ Network Error', err.message || 'Could not reach the server.');
+    } finally {
+      setLoading('submitBtn', false);
+    }
+  }
 
-            // Reset items
-            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
-            document.querySelectorAll('.item-quantity').forEach(inp => inp.value = 0);
+  // ── DELETE REPORT ─────────────────────────────────────────────────
+  async function deleteReport(id, monthYear) {
+    if (!confirm(`Delete the report for ${formatMonthYear(monthYear)}? This cannot be undone.`)) return;
 
-            // Populate items if available
-            if (report.hygieneItems) {
-                // Note: This assumes hygieneItems is a total; in v2 we'll have item-level data
-                // For now, we'll just show the total
-            }
+    hideResult('deleteResult');
 
-            document.getElementById('modalTitle').textContent = `Edit ${formatMonthYear(report.monthYear)}`;
-            document.getElementById('reportModal').classList.add('show');
-            updateNarrativePreview();
-        }
+    try {
+      const res  = await fetch('/.netlify/functions/delete-monthly-report', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password: adminPassword, id }),
+      });
+      const data = await res.json();
 
-        function viewReport(id) {
-            const report = allReports.find(r => r.id === id);
-            if (!report) return;
+      if (res.status === 401) {
+        document.getElementById('lockError').classList.add('visible');
+        logout();
+        return;
+      }
 
-            alert(`
-📊 ${formatMonthYear(report.monthYear)}
-════════════════════════════════
-Items Donated: ${report.hygieneItems || 0}
-Monetary Donations: $${(report.monetaryDonations || 0).toFixed(2)}
-New Partnerships: ${report.newPartnerships || 0}
-House Warming Baskets: ${report.houseWarmingBaskets || 0}
-People/Homes Served: ${report.peopleServed || 0}
-Locations: ${report.locationsServed || 'N/A'}
-════════════════════════════════
-${report.narrative || 'No narrative provided.'}
-            `);
-        }
+      if (!res.ok || !data.success) {
+        showResult('deleteResult','deleteResultTitle','deleteResultBody',
+          'error', '⚠ Delete failed', data.error || 'Unknown error.');
+        return;
+      }
 
-        async function deleteReport(id) {
-            if (!confirm('Are you sure you want to delete this report?')) return;
+      showResult('deleteResult','deleteResultTitle','deleteResultBody',
+        'success', '✓ Report Deleted', `The report for <strong>${formatMonthYear(monthYear)}</strong> has been removed.`);
 
-            try {
-                const response = await fetch('/.netlify/functions/delete-monthly-report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
+      loadReports();
 
-                if (response.ok) {
-                    allReports = allReports.filter(r => r.id !== id);
-                    renderReports();
-                    alert('Report deleted successfully.');
-                } else {
-                    alert('Error deleting report.');
-                }
-            } catch (error) {
-                console.error('Error deleting report:', error);
-                alert('Error deleting report.');
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('reportModal').classList.remove('show');
-            currentEditingId = null;
-        }
-
-        async function handleSubmit(event) {
-            event.preventDefault();
-
-            // Collect items data
-            let totalItems = 0;
-            const items = {};
-            document.querySelectorAll('.item-checkbox:checked').forEach(checkbox => {
-                const item = checkbox.dataset.item;
-                const qty = parseInt(document.querySelector(`input[data-item="${item}"][type="number"]`).value) || 0;
-                if (qty > 0) {
-                    items[item] = qty;
-                    totalItems += qty;
-                }
-            });
-
-            const reportData = {
-                monthYear: document.getElementById('monthYear').value,
-                hygieneItems: totalItems,
-                monetaryDonations: parseFloat(document.getElementById('monetaryDonations').value) || 0,
-                newPartnerships: parseInt(document.getElementById('newPartnerships').value) || 0,
-                houseWarmingBaskets: parseInt(document.getElementById('houseWarmingBaskets').value) || 0,
-                peopleServed: parseInt(document.getElementById('peopleServed').value) || 0,
-                locationsServed: document.getElementById('locationsServed').value,
-                narrative: document.getElementById('narrative').value,
-                itemsData: items
-            };
-
-            try {
-                const endpoint = currentEditingId 
-                    ? '/.netlify/functions/update-monthly-report'
-                    : '/.netlify/functions/save-monthly-report';
-                
-                const payload = currentEditingId 
-                    ? { ...reportData, id: currentEditingId }
-                    : reportData;
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    closeModal();
-                    loadReports();
-                    alert(currentEditingId ? 'Report updated successfully!' : 'Report saved successfully!');
-                } else {
-                    alert('Error saving report.');
-                }
-            } catch (error) {
-                console.error('Error saving report:', error);
-                alert('Error saving report.');
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('r3sc_authenticated');
-            window.location.hash = '#/';
-        }
-
-        document.getElementById('reportModal').addEventListener('click', (e) => {
-            if (e.target.id === 'reportModal') closeModal();
-        });
-    </script>
+    } catch (err) {
+      showResult('deleteResult','deleteResultTitle','deleteResultBody',
+        'error', '⚠ Network Error', err.message);
+    }
+  }
+</script>
 </body>
 </html>

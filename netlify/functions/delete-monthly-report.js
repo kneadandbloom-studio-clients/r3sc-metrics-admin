@@ -1,39 +1,66 @@
-const Airtable = require('airtable');
+/* ============================================================
+   netlify/functions/delete-monthly-report.js
+   The R3SC — Delete a monthly impact report
 
-const base = new Airtable.Base(process.env.AIRTABLE_API_KEY).base(process.env.AIRTABLE_BASE_ID);
-const TABLE_NAME = 'MonthlyReports';
+   Required env vars:
+     ADMIN_PASSWORD     — shared admin password
+     AIRTABLE_API_KEY   — your Airtable PAT
+     AIRTABLE_BASE_ID   — your R3SC base ID
+   ============================================================ */
 
-exports.handler = async (event, context) => {
-    if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            body: JSON.stringify({ error: 'Method not allowed' })
-        };
-    }
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
 
-    try {
-        const data = JSON.parse(event.body);
+const Airtable = require("airtable");
 
-        if (!data.id) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'id is required' })
-            };
-        }
+exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: CORS_HEADERS, body: "" };
+  }
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: "Method not allowed" }) };
+  }
 
-        // Delete the record
-        await base(TABLE_NAME).destroy(data.id);
+  // ── Auth ─────────────────────────────────────────────────
+  let body;
+  try {
+    body = JSON.parse(event.body || "{}");
+  } catch {
+    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "Invalid request body." }) };
+  }
 
-        return {
-            statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ success: true })
-        };
-    } catch (error) {
-        console.error('Error:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
-    }
+  if (!process.env.ADMIN_PASSWORD || body.password !== process.env.ADMIN_PASSWORD) {
+    return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unauthorized" }) };
+  }
+
+  if (!body.id) {
+    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "id is required." }) };
+  }
+
+  const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
+    process.env.AIRTABLE_BASE_ID
+  );
+
+  try {
+    await base("MonthlyReports").destroy(body.id);
+
+    console.log(`Monthly report deleted: ${body.id}`);
+
+    return {
+      statusCode: 200,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ success: true }),
+    };
+  } catch (error) {
+    console.error("delete-monthly-report error:", error);
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
 };

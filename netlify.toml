@@ -1,5 +1,4 @@
 [build]
-  command = "echo 'Static site - no build needed'"
   functions = "netlify/functions"
   publish = "."
 
@@ -7,13 +6,43 @@
   command = "echo 'Running local dev server'"
   port = 8888
 
-# Environment variables required:
-# AIRTABLE_API_KEY - Your Airtable Personal Access Token
-# AIRTABLE_BASE_ID - Your Airtable Base ID
-# ADMIN_PASSWORD - Password for login (optional, can be hardcoded in index.html for now)
+# ── Security headers ──────────────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
 
+# ── CORS for Netlify Functions ────────────────────────────────────────────────
+# NOTE: CORS headers are also set inside each function file.
+# Both are needed: Netlify headers cover preflight OPTIONS; function headers
+# cover actual POST responses when Netlify's edge doesn't merge them.
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin  = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+# ── Redirect: send all non-asset paths to index.html (SPA fallback) ──────────
+# Excludes actual Netlify function calls from the redirect.
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from   = "/*"
+  to     = "/index.html"
   status = 200
-  condition = "!{path: /\\.netlify/}"
+  force  = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REQUIRED ENVIRONMENT VARIABLES
+# Set all of these in: Netlify Dashboard → Site → Site Configuration → Environment Variables
+#
+#   ADMIN_PASSWORD       Shared password for the admin panel (r3sc-admin.html)
+#   AIRTABLE_API_KEY     Your Airtable Personal Access Token (pat...)
+#   AIRTABLE_BASE_ID     Your R3SC Airtable Base ID (app...)
+#
+# ── CHECKLIST ────────────────────────────────────────────────────────────────
+# [ ] ADMIN_PASSWORD     — set in Netlify dashboard, not here
+# [ ] AIRTABLE_API_KEY   — Airtable → Account → Developer Hub → Personal Access Tokens
+# [ ] AIRTABLE_BASE_ID   — from your Airtable base URL: airtable.com/{BASE_ID}/...
+# ─────────────────────────────────────────────────────────────────────────────

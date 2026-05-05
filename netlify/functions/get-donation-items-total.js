@@ -1,50 +1,70 @@
-const Airtable = require('airtable');
+/* ============================================================
+   netlify/functions/get-donation-items-total.js
+   The R3SC — Aggregate item donation totals across all reports
 
-const base = new Airtable.Base(process.env.AIRTABLE_API_KEY).base(process.env.AIRTABLE_BASE_ID);
-const TABLE_NAME = 'MonthlyReports';
+   Public read endpoint — no password required.
 
-exports.handler = async (event, context) => {
-    try {
-        const records = await base(TABLE_NAME).select().all();
+   Required env vars:
+     AIRTABLE_API_KEY   — your Airtable PAT
+     AIRTABLE_BASE_ID   — your R3SC base ID
+   ============================================================ */
 
-        const totals = {};
-        let grandTotal = 0;
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
 
-        // Aggregate itemsData from all records
-        records.forEach(record => {
-            const itemsData = record.fields.itemsData;
-            if (itemsData) {
-                try {
-                    const items = typeof itemsData === 'string' ? JSON.parse(itemsData) : itemsData;
-                    Object.keys(items).forEach(itemName => {
-                        const qty = items[itemName];
-                        totals[itemName] = (totals[itemName] || 0) + qty;
-                        grandTotal += qty;
-                    });
-                } catch (e) {
-                    console.warn('Could not parse itemsData:', e);
-                }
-            }
-        });
+const Airtable = require("airtable");
 
-        // Sort by quantity descending
-        const sorted = Object.entries(totals)
-            .map(([item, qty]) => ({ item, quantity: qty }))
-            .sort((a, b) => b.quantity - a.quantity);
+exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: CORS_HEADERS, body: "" };
+  }
 
-        return {
-            statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                totals: sorted,
-                grandTotal
-            })
-        };
-    } catch (error) {
-        console.error('Error:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
-    }
+  const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
+    process.env.AIRTABLE_BASE_ID
+  );
+
+  try {
+    const records = await base("MonthlyReports").select().all();
+
+    const totals = {};
+    let grandTotal = 0;
+
+    records.forEach((record) => {
+      const itemsData = record.fields.itemsData;
+      if (itemsData) {
+        try {
+          const items =
+            typeof itemsData === "string" ? JSON.parse(itemsData) : itemsData;
+          Object.keys(items).forEach((itemName) => {
+            const qty = items[itemName];
+            totals[itemName] = (totals[itemName] || 0) + qty;
+            grandTotal += qty;
+          });
+        } catch (e) {
+          console.warn("Could not parse itemsData:", e);
+        }
+      }
+    });
+
+    const sorted = Object.entries(totals)
+      .map(([item, quantity]) => ({ item, quantity }))
+      .sort((a, b) => b.quantity - a.quantity);
+
+    return {
+      statusCode: 200,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ totals: sorted, grandTotal }),
+    };
+  } catch (error) {
+    console.error("get-donation-items-total error:", error);
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
 };

@@ -1,71 +1,94 @@
-const Airtable = require('airtable');
-const { v4: uuidv4 } = require('uuid');
+/* ============================================================
+   netlify/functions/save-monthly-report.js
+   The R3SC — Create a new monthly impact report
 
-const base = new Airtable.Base(process.env.AIRTABLE_API_KEY).base(process.env.AIRTABLE_BASE_ID);
-const TABLE_NAME = 'MonthlyReports';
+   Required env vars:
+     ADMIN_PASSWORD     — shared admin password
+     AIRTABLE_API_KEY   — your Airtable PAT
+     AIRTABLE_BASE_ID   — your R3SC base ID
+   ============================================================ */
 
-exports.handler = async (event, context) => {
-    if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            body: JSON.stringify({ error: 'Method not allowed' })
-        };
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
+
+const Airtable = require("airtable");
+
+exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: CORS_HEADERS, body: "" };
+  }
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: "Method not allowed" }) };
+  }
+
+  // ── Auth ─────────────────────────────────────────────────
+  let body;
+  try {
+    body = JSON.parse(event.body || "{}");
+  } catch {
+    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "Invalid request body." }) };
+  }
+
+  if (!process.env.ADMIN_PASSWORD || body.password !== process.env.ADMIN_PASSWORD) {
+    return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unauthorized" }) };
+  }
+
+  // ── Validate ──────────────────────────────────────────────
+  if (!body.monthYear) {
+    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: "monthYear is required." }) };
+  }
+
+  const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
+    process.env.AIRTABLE_BASE_ID
+  );
+
+  try {
+    // Check for duplicate month
+    const existing = await base("MonthlyReports")
+      .select({ filterByFormula: `{monthYear} = '${body.monthYear}'` })
+      .all();
+
+    if (existing.length > 0) {
+      return {
+        statusCode: 409,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: "A report for this month already exists." }),
+      };
     }
 
-    try {
-        const data = JSON.parse(event.body);
+    // ✅ Airtable auto-generates record IDs — do NOT pass an id field
+    const record = await base("MonthlyReports").create({
+      monthYear:           body.monthYear,
+      hygieneItems:        body.hygieneItems        || 0,
+      monetaryDonations:   body.monetaryDonations   || 0,
+      newPartnerships:     body.newPartnerships      || 0,
+      houseWarmingBaskets: body.houseWarmingBaskets  || 0,
+      peopleServed:        body.peopleServed         || 0,
+      locationsServed:     body.locationsServed      || "",
+      narrative:           body.narrative            || "",
+      itemsData:           JSON.stringify(body.itemsData || {}),
+    });
 
-        if (!data.monthYear) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'monthYear is required' })
-            };
-        }
+    console.log(`Monthly report created: ${record.id} — ${body.monthYear}`);
 
-        // Check if report for this month already exists
-        const existing = await base(TABLE_NAME)
-            .select({
-                filterByFormula: `{monthYear} = '${data.monthYear}'`
-            })
-            .all();
-
-        if (existing.length > 0) {
-            return {
-                statusCode: 409,
-                body: JSON.stringify({ error: 'Report for this month already exists' })
-            };
-        }
-
-        // Create new record
-        const record = await base(TABLE_NAME).create({
-            id: uuidv4(),
-            monthYear: data.monthYear,
-            hygieneItems: data.hygieneItems || 0,
-            monetaryDonations: data.monetaryDonations || 0,
-            newPartnerships: data.newPartnerships || 0,
-            houseWarmingBaskets: data.houseWarmingBaskets || 0,
-            peopleServed: data.peopleServed || 0,
-            locationsServed: data.locationsServed || '',
-            narrative: data.narrative || '',
-            itemsData: JSON.stringify(data.itemsData || {})
-        });
-
-        return {
-            statusCode: 201,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                success: true,
-                record: {
-                    id: record.id,
-                    ...record.fields
-                }
-            })
-        };
-    } catch (error) {
-        console.error('Error:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
-    }
+    return {
+      statusCode: 201,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({
+        success: true,
+        record: { id: record.id, ...record.fields },
+      }),
+    };
+  } catch (error) {
+    console.error("save-monthly-report error:", error);
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
 };

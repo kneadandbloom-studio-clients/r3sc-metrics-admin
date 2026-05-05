@@ -1,41 +1,74 @@
-const Airtable = require('airtable');
+/* ============================================================
+   netlify/functions/get-monthly-reports.js
+   The R3SC — Monthly Impact Reports
 
-const base = new Airtable.Base(process.env.AIRTABLE_API_KEY).base(process.env.AIRTABLE_BASE_ID);
-const TABLE_NAME = 'MonthlyReports';
+   Returns all monthly report records from Airtable.
+   Public read endpoint — no password required.
 
-exports.handler = async (event, context) => {
-    try {
-        const records = await base(TABLE_NAME).select({
-            sort: [{ field: 'monthYear', direction: 'desc' }]
-        }).all();
+   Required env vars:
+     AIRTABLE_API_KEY   — your Airtable PAT
+     AIRTABLE_BASE_ID   — your R3SC base ID
+   ============================================================ */
 
-        const reports = records.map(record => {
-            const fields = record.fields;
-            // Ensure hygieneItems is a number (calculated total from itemsData)
-            return {
-                id: record.id,
-                monthYear: fields.monthYear,
-                hygieneItems: fields.hygieneItems || 0,
-                monetaryDonations: fields.monetaryDonations || 0,
-                newPartnerships: fields.newPartnerships || 0,
-                houseWarmingBaskets: fields.houseWarmingBaskets || 0,
-                peopleServed: fields.peopleServed || 0,
-                locationsServed: fields.locationsServed || '',
-                narrative: fields.narrative || '',
-                itemsData: fields.itemsData ? JSON.parse(fields.itemsData) : {}
-            };
-        });
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
 
-        return {
-            statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reports })
-        };
-    } catch (error) {
-        console.error('Error:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
-    }
+const Airtable = require("airtable");
+
+exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: CORS_HEADERS, body: "" };
+  }
+
+  const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
+    process.env.AIRTABLE_BASE_ID
+  );
+
+  try {
+    const records = await base("MonthlyReports")
+      .select({ sort: [{ field: "monthYear", direction: "desc" }] })
+      .all();
+
+    const reports = records.map((record) => {
+      const f = record.fields;
+      let itemsData = {};
+      if (f.itemsData) {
+        try {
+          itemsData =
+            typeof f.itemsData === "string" ? JSON.parse(f.itemsData) : f.itemsData;
+        } catch {
+          itemsData = {};
+        }
+      }
+      return {
+        id: record.id,                                    // ✅ was r.id (bug fix)
+        monthYear: f.monthYear || "",
+        hygieneItems: f.hygieneItems || 0,
+        monetaryDonations: f.monetaryDonations || 0,
+        newPartnerships: f.newPartnerships || 0,
+        houseWarmingBaskets: f.houseWarmingBaskets || 0,
+        peopleServed: f.peopleServed || 0,
+        locationsServed: f.locationsServed || "",
+        narrative: f.narrative || "",
+        itemsData,
+      };
+    });
+
+    return {
+      statusCode: 200,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ reports }),
+    };
+  } catch (error) {
+    console.error("get-monthly-reports error:", error);
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
 };
