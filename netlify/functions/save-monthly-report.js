@@ -114,7 +114,6 @@ exports.handler = async (event) => {
 			peopleServed: body.peopleServed || 0,
 			locationsServed: body.locationsServed || "",
 			narrative: body.narrative || "",
-			donatedItems: body.donatedItems || 0,
 		});
 
     // Save donated items linked to this report
