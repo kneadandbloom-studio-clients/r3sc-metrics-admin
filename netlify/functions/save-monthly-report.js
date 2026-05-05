@@ -105,9 +105,14 @@ exports.handler = async (event) => {
       };
     }
 
+    const hygieneItems = (body.donatedItems || [])
+    .filter((i) => i.quantity > 0)
+    .reduce((sum, i) => sum + i.quantity, 0);
+
     // Create the MonthlyReports row
     const record = await base("MonthlyReports").create({
-			monthYear: body.monthYear,
+			monthYear: body.Month,
+      hygieneItems: hygieneItems,
 			monetaryDonations: body.monetaryDonations || 0,
 			newPartnerships: body.newPartnerships || 0,
 			houseWarmingBaskets: body.houseWarmingBaskets || 0,
