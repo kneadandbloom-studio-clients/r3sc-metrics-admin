@@ -10,61 +10,51 @@
    ============================================================ */
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Content-Type": "application/json",
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type",
+	"Content-Type": "application/json",
 };
 
 const Airtable = require("airtable");
 
 exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers: CORS_HEADERS, body: "" };
-  }
+	if (event.httpMethod === "OPTIONS") {
+		return { statusCode: 204, headers: CORS_HEADERS, body: "" };
+	}
 
-  const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
-    process.env.AIRTABLE_BASE_ID
-  );
+	const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
-  try {
-    const records = await base("MonthlyReports").select().all();
+	try {
+		const records = await base("DonatedItems").select().all();
 
-    const totals = {};
-    let grandTotal = 0;
+		const totals = {};
+		let grandTotal = 0;
 
-    records.forEach((record) => {
-      const itemsData = record.fields.itemsData;
-      if (itemsData) {
-        try {
-          const items =
-            typeof itemsData === "string" ? JSON.parse(itemsData) : itemsData;
-          Object.keys(items).forEach((itemName) => {
-            const qty = items[itemName];
-            totals[itemName] = (totals[itemName] || 0) + qty;
-            grandTotal += qty;
-          });
-        } catch (e) {
-          console.warn("Could not parse itemsData:", e);
-        }
-      }
-    });
+		records.forEach((record) => {
+			const name = record.fields.itemName;
+			const qty = record.fields.quantity || 0;
+			if (name) {
+				totals[name] = (totals[name] || 0) + qty;
+				grandTotal += qty;
+			}
+		});
 
-    const sorted = Object.entries(totals)
-      .map(([item, quantity]) => ({ item, quantity }))
-      .sort((a, b) => b.quantity - a.quantity);
+		const sorted = Object.entries(totals)
+			.map(([item, quantity]) => ({ item, quantity }))
+			.sort((a, b) => b.quantity - a.quantity);
 
-    return {
-      statusCode: 200,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ totals: sorted, grandTotal }),
-    };
-  } catch (error) {
-    console.error("get-donation-items-total error:", error);
-    return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: error.message }),
-    };
-  }
+		return {
+			statusCode: 200,
+			headers: CORS_HEADERS,
+			body: JSON.stringify({ totals: sorted, grandTotal }),
+		};
+	} catch (error) {
+		console.error("get-donation-items-total error:", error);
+		return {
+			statusCode: 500,
+			headers: CORS_HEADERS,
+			body: JSON.stringify({ error: error.message }),
+		};
+	}
 };

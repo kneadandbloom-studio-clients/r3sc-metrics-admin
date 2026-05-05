@@ -114,7 +114,7 @@
                 const latest = sorted[0];
 
                 // Calculate total items from itemsData if available, else use hygieneItems
-                const totalItems = latest.hygieneItems || 0;
+                const totalItems = latest.donatedItems ? latest.donatedItems.reduce((sum, i) => sum + i.quantity, 0) : latest.hygieneItems || 0;
                 const peopleServed = latest.peopleServed || 0;
                 const partnerships = latest.newPartnerships || 0;
 

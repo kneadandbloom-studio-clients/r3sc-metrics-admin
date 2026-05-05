@@ -148,7 +148,8 @@
 
                     <div class="card-metrics">
                         <div class="metric">
-                            <div class="metric-value">${report.hygieneItems || 0}</div>
+                            <div class="metric-value">${report.donatedItems ? report.donatedItems.reduce((sum, i) => sum + i.quantity, 0) : report.hygieneItems || 0}</div>
+
                             <div class="metric-label">Items<br/>Donated</div>
                         </div>
                         <div class="metric">
