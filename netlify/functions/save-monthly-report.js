@@ -107,15 +107,15 @@ exports.handler = async (event) => {
 
     // Create the MonthlyReports row
     const record = await base("MonthlyReports").create({
-      monthYear:           body.monthYear,
-      hygieneItems:        body.hygieneItems        || 0,
-      monetaryDonations:   body.monetaryDonations   || 0,
-      newPartnerships:     body.newPartnerships      || 0,
-      houseWarmingBaskets: body.houseWarmingBaskets  || 0,
-      peopleServed:        body.peopleServed         || 0,
-      locationsServed:     body.locationsServed      || "",
-      narrative:           body.narrative            || "",
-    });
+			monthYear: body.monthYear,
+			monetaryDonations: body.monetaryDonations || 0,
+			newPartnerships: body.newPartnerships || 0,
+			houseWarmingBaskets: body.houseWarmingBaskets || 0,
+			peopleServed: body.peopleServed || 0,
+			locationsServed: body.locationsServed || "",
+			narrative: body.narrative || "",
+			donatedItems: body.donatedItems || 0,
+		});
 
     // Save donated items linked to this report
     await saveDonatedItems(base, record.id, body.donatedItems || []);
