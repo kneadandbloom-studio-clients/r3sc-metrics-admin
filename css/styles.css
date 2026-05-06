@@ -1057,7 +1057,7 @@ footer {
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: var(--color-text-lighter);
-    margin-bottom: -10px;
+    margin-bottom: 12px;
     padding-top: 20px;
 }
 
