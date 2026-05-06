@@ -624,10 +624,10 @@ nav a:hover {
     font-size: 14px;
     line-height: 1.7;
     color: #555;
+    margin-bottom: 15px;
 }
 
 .card-narrative {
-    margin-top: 15px;
     padding: 15px;
     font-size: 14px;
     line-height: 1.7;
