@@ -55,6 +55,33 @@ const ITEM_TYPE_MAP = {
 const HYGIENE_ITEMS = Object.keys(ITEM_TYPE_MAP).filter((k) => ITEM_TYPE_MAP[k] === "Hygiene");
 const HOUSEHOLD_ITEMS = Object.keys(ITEM_TYPE_MAP).filter((k) => ITEM_TYPE_MAP[k] === "Household");
 
+// ── REPORT CACHE ──────────────────────────────────────────────────
+let cachedReports = [];
+
+// ── MONTH/YEAR AUTO-POPULATE ──────────────────────────────────────
+function onMonthYearChange() {
+	const selected = document.getElementById("f-monthYear").value;
+	if (!selected || editingId) {
+		// If already in edit mode, just run normal form change
+		onFormChange();
+		return;
+	}
+	const existing = cachedReports.find((r) => r.monthYear === selected);
+	if (existing) {
+		startEdit(existing);
+		showResult(
+			"newReportResult",
+			"newReportResultTitle",
+			"newReportResultBody",
+			"info",
+			"ℹ Report Loaded",
+			`A report for <strong>${formatMonthYear(selected)}</strong> already exists and has been loaded for editing.`
+		);
+	} else {
+		onFormChange();
+	}
+}
+
 // ── ITEMIZED DONATIONS ────────────────────────────────────────────
 function addItemRow(itemName = "", qty = "") {
 	const list = document.getElementById("itemsList");
@@ -218,10 +245,12 @@ async function loadReports() {
 		const data = await res.json();
 
 		if (!data.reports || data.reports.length === 0) {
+			cachedReports = [];
 			list.innerHTML = '<div class="reports-empty">No reports yet. Create one above.</div>';
 			return;
 		}
 
+		cachedReports = data.reports;
 		const sorted = [...data.reports].sort((a, b) => new Date(b.monthYear) - new Date(a.monthYear));
 
 		list.innerHTML = sorted
@@ -268,7 +297,18 @@ function startEdit(report) {
 	document.getElementById("f-narrative").value = report.narrative || "";
 
 	document.getElementById("itemsList").innerHTML = "";
-	(report.donatedItems || []).forEach((item) => addItemRow(item.itemName, item.quantity));
+	const collapsed = Object.values(
+		(report.donatedItems || []).reduce((acc, item) => {
+			if (!item.itemName) return acc;
+			if (acc[item.itemName]) {
+				acc[item.itemName].quantity += item.quantity;
+			} else {
+				acc[item.itemName] = { itemName: item.itemName, quantity: item.quantity };
+			}
+			return acc;
+		}, {})
+	);
+	collapsed.forEach((item) => addItemRow(item.itemName, item.quantity));
 
 	// Treat existing narrative as manually set — show Regenerate option
 	if (report.narrative) {
