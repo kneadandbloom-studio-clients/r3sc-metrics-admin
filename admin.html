@@ -1,766 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>R3SC Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
-
-  <style>
-    :root {
-      --teal:       #2a7a6f;
-      --teal-dk:    #1d5a52;
-      --teal-pale:  #e8f4f2;
-      --teal-mid:   #b2d8d3;
-      --red:        #c0392b;
-      --red-pale:   #fdf0ef;
-      --gold:       #d4a843;
-      --gold-pale:  #fdf6e3;
-      --slate:      #2c3e50;
-      --muted:      #7f8c8d;
-      --border:     #dce3e2;
-      --bg:         #f4f7f6;
-      --white:      #ffffff;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      font-family: 'Roboto', sans-serif;
-      color: var(--slate);
-      min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    /* ── LOCK SCREEN ───────────────────────────────────── */
-    #lockScreen {
-      width: 100%; max-width: 400px;
-      background: var(--white);
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      box-shadow: 0 12px 48px rgba(44,62,80,.12);
-      padding: 48px 40px 40px;
-      text-align: center;
-      margin-top: 10vh;
-    }
-    .lock-icon { font-size: 2.4rem; margin-bottom: 16px; display: block; }
-    .lock-eyebrow {
-      font-size: 10px; letter-spacing: .28em; text-transform: uppercase;
-      color: var(--teal); font-weight: 700; margin-bottom: 10px;
-    }
-    .lock-title {
-      font-size: 1.7rem; font-weight: 700; color: var(--slate);
-      line-height: 1.2; margin-bottom: 6px;
-    }
-    .lock-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.55; }
-    .lock-field {
-      width: 100%; padding: 13px 16px;
-      border: 1.5px solid var(--border); border-radius: 10px;
-      font-family: 'Roboto', sans-serif; font-size: 14px;
-      color: var(--slate); background: var(--bg); outline: none;
-      transition: border-color .2s; text-align: center; letter-spacing: .1em;
-      margin-bottom: 14px;
-    }
-    .lock-field:focus { border-color: var(--teal); background: var(--white); }
-    .lock-field::placeholder { color: var(--border); letter-spacing: .05em; }
-    .lock-btn {
-      width: 100%; padding: 14px; background: var(--teal);
-      color: var(--white); font-family: 'Roboto', sans-serif;
-      font-size: 13.5px; font-weight: 700; letter-spacing: .06em;
-      border: none; border-radius: 10px; cursor: pointer;
-      transition: background .2s, transform .15s;
-    }
-    .lock-btn:hover { background: var(--teal-dk); }
-    .lock-btn:active { transform: scale(.98); }
-    .lock-error { font-size: 12.5px; color: var(--red); margin-top: 12px; display: none; }
-    .lock-error.visible { display: block; }
-
-    /* ── ADMIN PANEL ───────────────────────────────────── */
-    #adminPanel { display: none; width: 100%; max-width: 660px; flex-direction: column; gap: 20px; padding-bottom: 48px; }
-    #adminPanel.visible { display: flex; }
-
-    .admin-header {
-      background: var(--teal);
-      border-radius: 20px; padding: 32px 36px;
-      text-align: center; position: relative; overflow: hidden;
-    }
-    .admin-header::before {
-      content: ''; position: absolute; inset: 0;
-      background: repeating-linear-gradient(-45deg, transparent, transparent 24px, rgba(255,255,255,.04) 24px, rgba(255,255,255,.04) 25px);
-      pointer-events: none;
-    }
-    .admin-eyebrow {
-      font-size: 10px; letter-spacing: .28em; text-transform: uppercase;
-      color: var(--teal-mid); font-weight: 700; margin-bottom: 10px;
-    }
-    .admin-title {
-      font-size: clamp(1.6rem, 4vw, 2.2rem);
-      font-weight: 700; color: var(--white); line-height: 1.15;
-    }
-    .admin-sub { font-size: 12.5px; color: rgba(255,255,255,.5); margin-top: 8px; }
-
-    /* ── ACCORDION CARDS ───────────────────────────────── */
-    .admin-card {
-      background: var(--white); border-radius: 16px;
-      border: 1.5px solid var(--border);
-      box-shadow: 0 4px 20px rgba(44,62,80,.07); overflow: hidden;
-    }
-    .card-header {
-      padding: 20px 24px; display: flex; align-items: center;
-      justify-content: space-between; cursor: pointer; user-select: none;
-      transition: background .15s; border-bottom: 1.5px solid transparent;
-    }
-    .card-header:hover { background: var(--teal-pale); }
-    .admin-card.open .card-header { border-bottom-color: var(--border); }
-    .card-header-text { flex: 1; }
-    .card-label { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--teal); font-weight: 700; margin-bottom: 4px; }
-    .card-title { font-size: 1.1rem; font-weight: 700; color: var(--slate); }
-    .card-chevron {
-      font-size: 11px; color: var(--muted); margin-left: 12px; flex-shrink: 0;
-      transition: transform .25s cubic-bezier(.22,1,.36,1);
-    }
-    .admin-card.open .card-chevron { transform: rotate(180deg); }
-    .card-body { display: none; }
-    .admin-card.open .card-body { display: block; }
-
-    /* ── FORM INSIDE CARD ──────────────────────────────── */
-    .form-inner { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
-
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
-
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label {
-      font-size: 11px; font-weight: 700; letter-spacing: .15em;
-      text-transform: uppercase; color: var(--muted);
-    }
-    .form-input, .form-textarea {
-      padding: 11px 14px; border: 1.5px solid var(--border);
-      border-radius: 10px; font-family: 'Roboto', sans-serif;
-      font-size: 14px; color: var(--slate); background: var(--bg);
-      outline: none; transition: border-color .2s, background .2s;
-      width: 100%;
-    }
-    .form-input:focus, .form-textarea:focus {
-      border-color: var(--teal); background: var(--white);
-    }
-    .form-input.error, .form-textarea.error { border-color: var(--red); }
-    .form-textarea { resize: vertical; min-height: 110px; }
-    .form-hint { font-size: 11.5px; color: var(--muted); }
-    .field-error { font-size: 11.5px; color: var(--red); display: none; }
-    .field-error.visible { display: block; }
-
-    /* Items sub-grid */
-    .items-section { border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .items-header {
-      padding: 12px 16px; background: var(--teal-pale);
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .items-header-label { font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--teal-dk); }
-    .add-item-btn {
-      font-size: 12px; font-weight: 700; color: var(--teal);
-      background: none; border: 1.5px solid var(--teal-mid);
-      border-radius: 6px; padding: 4px 10px; cursor: pointer;
-      transition: background .15s;
-    }
-    .add-item-btn:hover { background: var(--teal-mid); }
-    .items-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
-    .item-row { display: flex; gap: 10px; align-items: center; }
-    .item-row input {
-      padding: 9px 12px; border: 1.5px solid var(--border);
-      border-radius: 8px; font-family: 'Roboto', sans-serif;
-      font-size: 13.5px; color: var(--slate); background: var(--bg);
-      outline: none; flex: 1; transition: border-color .2s;
-    }
-    .item-row input:focus { border-color: var(--teal); background: var(--white); }
-    .item-row input.qty { flex: 0 0 80px; text-align: right; }
-    .item-select {
-      flex: 1; padding: 9px 12px; border: 1.5px solid var(--border);
-      border-radius: 8px; font-family: 'Roboto', sans-serif;
-      font-size: 13.5px; color: var(--slate); background: var(--bg);
-      outline: none; transition: border-color .2s; cursor: pointer;
-      appearance: auto;
-    }
-    .item-select:focus { border-color: var(--teal); background: var(--white); }
-    .remove-item-btn {
-      background: none; border: none; cursor: pointer; color: var(--muted);
-      font-size: 16px; line-height: 1; padding: 4px; transition: color .15s;
-    }
-    .remove-item-btn:hover { color: var(--red); }
-
-    /* ── RESULT CARD ───────────────────────────────────── */
-    .result-card {
-      border-radius: 12px; padding: 0; max-height: 0; overflow: hidden;
-      transition: max-height .35s ease, padding .25s ease;
-      margin: 0 24px;
-    }
-    .result-card.visible { max-height: 300px; padding: 18px; margin-bottom: 4px; border: 1.5px solid var(--border); }
-    .result-card.success { border-color: var(--teal-mid); background: var(--teal-pale); }
-    .result-card.error   { border-color: #f0c0c0; background: var(--red-pale); }
-    .result-title { font-size: 14px; font-weight: 700; color: var(--slate); margin-bottom: 6px; }
-    .result-card.success .result-title { color: var(--teal-dk); }
-    .result-card.error   .result-title { color: var(--red); }
-    .result-body { font-size: 13px; color: var(--muted); line-height: 1.55; }
-
-    /* ── EXISTING REPORTS LIST ─────────────────────────── */
-    .reports-list { padding: 0; }
-    .report-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 24px; border-bottom: 1px solid var(--border);
-      transition: background .15s; gap: 12px;
-    }
-    .report-row:last-child { border-bottom: none; }
-    .report-row:hover { background: var(--teal-pale); }
-    .report-row-month { font-size: 14px; font-weight: 500; color: var(--slate); }
-    .report-row-meta { font-size: 12px; color: var(--muted); }
-    .report-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
-    .row-btn {
-      font-size: 12px; font-weight: 700; padding: 6px 12px;
-      border-radius: 7px; border: 1.5px solid; cursor: pointer;
-      transition: background .15s, color .15s; background: none;
-    }
-    .row-btn.edit { border-color: var(--teal-mid); color: var(--teal); }
-    .row-btn.edit:hover { background: var(--teal); color: var(--white); }
-    .row-btn.del  { border-color: #f0c0c0; color: var(--red); }
-    .row-btn.del:hover  { background: var(--red); color: var(--white); }
-
-    .reports-loading { padding: 32px 24px; text-align: center; color: var(--muted); font-size: 13.5px; }
-    .reports-empty   { padding: 32px 24px; text-align: center; color: var(--muted); font-size: 13.5px; }
-
-    /* ── ACTION BUTTONS ────────────────────────────────── */
-    .action-wrap { padding: 20px 24px 24px; display: flex; gap: 10px; align-items: center; }
-    .action-btn {
-      padding: 13px 22px; background: var(--teal); color: var(--white);
-      font-family: 'Roboto', sans-serif; font-size: 13.5px; font-weight: 700;
-      border: none; border-radius: 10px; cursor: pointer;
-      transition: background .2s, transform .15s; display: flex; align-items: center; gap: 8px;
-    }
-    .action-btn:hover { background: var(--teal-dk); }
-    .action-btn:active { transform: scale(.98); }
-    .action-btn:disabled { opacity: .55; cursor: not-allowed; }
-    .action-btn.danger { background: var(--red); }
-    .action-btn.danger:hover { background: #a93226; }
-    .action-btn.secondary {
-      background: none; color: var(--muted); border: 1.5px solid var(--border);
-    }
-    .action-btn.secondary:hover { background: var(--bg); color: var(--slate); }
-
-    .btn-spinner {
-      width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35);
-      border-top-color: white; border-radius: 50%;
-      animation: spin .7s linear infinite; display: none;
-    }
-    .action-btn.loading .btn-spinner { display: inline-block; }
-    .action-btn.loading .btn-text   { opacity: .6; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .divider { height: 1px; background: var(--border); margin: 0; }
-
-    /* ── LOGOUT BTN ────────────────────────────────────── */
-    .logout-btn {
-      background: none; border: none; cursor: pointer;
-      font-size: 12.5px; color: var(--muted); text-decoration: underline;
-      text-underline-offset: 3px; padding: 0; align-self: center;
-      transition: color .15s;
-    }
-    .logout-btn:hover { color: var(--red); }
-
-    /* ── EDIT MODE BANNER ──────────────────────────────── */
-    .edit-banner {
-      background: var(--gold-pale); border: 1.5px solid var(--gold);
-      border-radius: 10px; padding: 10px 14px; font-size: 13px;
-      color: #7a5a10; display: none; align-items: center; gap: 10px;
-    }
-    .edit-banner.visible { display: flex; }
-    .edit-banner strong { font-weight: 700; }
-  </style>
-</head>
-<body>
-
-  <!-- ── LOCK SCREEN ────────────────────────────────────── -->
-  <div id="lockScreen">
-    <span class="lock-icon">🔒</span>
-    <p class="lock-eyebrow">The R3SC</p>
-    <h1 class="lock-title">Admin Panel</h1>
-    <p class="lock-sub">Enter your admin password to manage monthly impact reports.</p>
-    <input
-      id="passwordInput"
-      class="lock-field"
-      type="password"
-      placeholder="••••••••"
-      autocomplete="current-password"
-      onkeydown="if(event.key==='Enter') unlock()"
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>R3SC Admin</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
     />
-    <button class="lock-btn" onclick="unlock()">Enter Admin Panel</button>
-    <p class="lock-error" id="lockError">Incorrect password — try again.</p>
-  </div>
-
-  <!-- ── ADMIN PANEL ────────────────────────────────────── -->
-  <div id="adminPanel">
-
-    <div class="admin-header">
-      <p class="admin-eyebrow">The R3SC · Admin</p>
-      <h1 class="admin-title">Monthly Impact Reports</h1>
-      <p class="admin-sub">Restoring Resources, Respect &amp; Community</p>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <!-- ── LOCK SCREEN ────────────────────────────────────── -->
+    <div id="lockScreen">
+      <span class="lock-icon">🔒</span>
+      <p class="lock-eyebrow">The R3SC</p>
+      <h1 class="lock-title">Admin Panel</h1>
+      <p class="lock-sub">
+        Enter your admin password to manage monthly impact reports.
+      </p>
+      <input
+        id="passwordInput"
+        class="lock-field"
+        type="password"
+        placeholder="••••••••"
+        autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') unlock()"
+      />
+      <button class="lock-btn" onclick="unlock()">Enter Admin Panel</button>
+      <p class="lock-error" id="lockError">Incorrect password — try again.</p>
     </div>
 
-    <!-- ── CARD 1: NEW MONTHLY REPORT (accordion) ─────── -->
-    <div class="admin-card" id="card-new-report">
-      <div class="card-header" onclick="toggleCard('card-new-report')">
-        <div class="card-header-text">
-          <p class="card-label">Monthly Impact</p>
-          <h2 class="card-title">New Monthly Report</h2>
-        </div>
-        <span class="card-chevron">▼</span>
+    <!-- ── ADMIN PANEL ────────────────────────────────────── -->
+    <div id="adminPanel">
+      <div class="admin-header">
+        <p class="admin-eyebrow">The R3SC · Admin</p>
+        <h1 class="admin-title">Monthly Impact Reports</h1>
+        <p class="admin-sub">Restoring Resources, Respect &amp; Community</p>
       </div>
 
-      <div class="card-body">
-        <div class="form-inner">
-
-          <!-- Edit mode banner -->
-          <div class="edit-banner" id="editBanner">
-            <span>✏️</span>
-            <span>Editing report: <strong id="editBannerMonth"></strong></span>
-            <button class="action-btn secondary" style="margin-left:auto;padding:6px 12px;font-size:12px;" onclick="cancelEdit()">Cancel Edit</button>
+      <!-- ── CARD 1: NEW MONTHLY REPORT ─────────────────── -->
+      <div class="admin-card" id="card-new-report">
+        <div class="card-header" onclick="toggleCard('card-new-report')">
+          <div class="card-header-text">
+            <p class="card-label">Monthly Impact</p>
+            <h2 class="card-title">New Monthly Report</h2>
           </div>
+          <span class="card-chevron">▼</span>
+        </div>
 
-          <!-- Month/Year -->
-          <div class="form-group">
-            <label class="form-label" for="f-monthYear">Month / Year <span style="color:var(--red)">*</span></label>
-            <input class="form-input" id="f-monthYear" type="month" />
-            <p class="field-error" id="err-monthYear">Month is required.</p>
-          </div>
+        <div class="card-body">
+          <div class="form-inner">
+            <!-- Edit mode banner -->
+            <div class="edit-banner" id="editBanner">
+              <span>✏️</span>
+              <span
+                >Editing report: <strong id="editBannerMonth"></strong
+              ></span>
+              <button
+                class="action-btn secondary"
+                style="margin-left: auto; padding: 6px 12px; font-size: 12px"
+                onclick="cancelEdit()"
+              >
+                Cancel Edit
+              </button>
+            </div>
 
-          <!-- Row: People Served + Locations -->
-          <div class="form-row">
+            <!-- Month/Year -->
             <div class="form-group">
-              <label class="form-label" for="f-peopleServed">People Served</label>
-              <input class="form-input" id="f-peopleServed" type="number" min="0" placeholder="0" />
+              <label class="form-label" for="f-monthYear"
+                >Month / Year <span style="color: var(--red)">*</span></label
+              >
+              <input
+                class="form-input"
+                id="f-monthYear"
+                type="month"
+                oninput="onFormChange()"
+              />
+              <p class="field-error" id="err-monthYear">Month is required.</p>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="f-locationsServed">Locations Served</label>
-              <input class="form-input" id="f-locationsServed" type="text" placeholder="e.g. Downtown, Eastside" />
-            </div>
-          </div>
 
-          <!-- Row: Hygiene Items + House Warming Baskets -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="f-hygieneItems">Hygiene Items Donated</label>
-              <input class="form-input" id="f-hygieneItems" type="number" min="0" placeholder="0" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="f-houseWarmingBaskets">House Warming Baskets</label>
-              <input class="form-input" id="f-houseWarmingBaskets" type="number" min="0" placeholder="0" />
-            </div>
-          </div>
-
-          <!-- Row: Monetary Donations + New Partnerships -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="f-monetaryDonations">Monetary Donations ($)</label>
-              <input class="form-input" id="f-monetaryDonations" type="number" min="0" step="0.01" placeholder="0.00" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="f-newPartnerships">New Partnerships</label>
-              <input class="form-input" id="f-newPartnerships" type="number" min="0" placeholder="0" />
-            </div>
-          </div>
-
-          <!-- Narrative -->
-          <div class="form-group">
-            <label class="form-label" for="f-narrative">Narrative / Impact Story</label>
-            <textarea class="form-textarea" id="f-narrative" placeholder="Share the human story behind this month's numbers…"></textarea>
-          </div>
-
-          <!-- Itemized Donations -->
-          <div class="form-group">
-            <label class="form-label">Itemized Donations <span class="form-hint" style="text-transform:none;letter-spacing:0;">(optional)</span></label>
-            <div class="items-section">
-              <div class="items-header">
-                <span class="items-header-label">Item Breakdown</span>
-                <button class="add-item-btn" onclick="addItemRow()">+ Add Item</button>
+            <!-- Row: People Served + Locations -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="f-peopleServed"
+                  >People Served</label
+                >
+                <input
+                  class="form-input"
+                  id="f-peopleServed"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  oninput="onFormChange()"
+                />
               </div>
-              <div class="items-list" id="itemsList">
-                <!-- item rows injected here -->
+              <div class="form-group">
+                <label class="form-label" for="f-locationsServed"
+                  >Locations Served</label
+                >
+                <input
+                  class="form-input"
+                  id="f-locationsServed"
+                  type="text"
+                  placeholder="e.g. Oakland, Berkeley"
+                  oninput="onFormChange()"
+                />
               </div>
             </div>
-            <p class="form-hint">Select each donated item and enter the quantity. Item type is assigned automatically.</p>
+
+            <!-- Row: House Warming Baskets + New Partnerships -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="f-houseWarmingBaskets"
+                  >House Warming Baskets</label
+                >
+                <input
+                  class="form-input"
+                  id="f-houseWarmingBaskets"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  oninput="onFormChange()"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="f-newPartnerships"
+                  >New Partnerships</label
+                >
+                <input
+                  class="form-input"
+                  id="f-newPartnerships"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <!-- Row: Monetary Donations -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="f-monetaryDonations"
+                  >Monetary Donations ($)</label
+                >
+                <input
+                  class="form-input"
+                  id="f-monetaryDonations"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <!-- Itemized Donations (before narrative so data is ready) -->
+            <div class="form-group">
+              <label class="form-label">
+                Itemized Donations
+                <span
+                  class="form-hint"
+                  style="
+                    text-transform: none;
+                    letter-spacing: 0;
+                    font-size: 11px;
+                  "
+                  >(optional)</span
+                >
+              </label>
+              <div class="items-section">
+                <div class="items-header">
+                  <span class="items-header-label">Item Breakdown</span>
+                  <button class="add-item-btn" onclick="addItemRow()">
+                    + Add Item
+                  </button>
+                </div>
+                <div class="items-list" id="itemsList"></div>
+              </div>
+              <p class="form-hint">
+                Select each donated item and enter the quantity. Item type is
+                assigned automatically.
+              </p>
+            </div>
+
+            <!-- Narrative -->
+            <div class="form-group">
+              <label class="form-label" for="f-narrative">
+                Narrative / Impact Story
+                <button
+                  class="regen-btn"
+                  id="regenBtn"
+                  onclick="regenNarrative()"
+                >
+                  ↺ Regenerate
+                </button>
+              </label>
+              <textarea
+                class="form-textarea"
+                id="f-narrative"
+                placeholder='Auto-generates once items and quantities are entered — e.g. "In May 2025, R3SC donated 285 hygiene and household items and 10 house-warming baskets to serve 25 people across Oakland and Berkeley…"'
+                oninput="onNarrativeManualEdit()"
+              ></textarea>
+              <p class="narrative-hint" id="narrativeHint">
+                <span id="narrativeHintIcon">✦</span>
+                <span id="narrativeHintText"
+                  >Add items and quantities above to auto-generate.</span
+                >
+              </p>
+            </div>
+          </div>
+          <!-- /.form-inner -->
+
+          <div class="result-card" id="newReportResult">
+            <div class="result-title" id="newReportResultTitle"></div>
+            <div class="result-body" id="newReportResultBody"></div>
           </div>
 
-        </div><!-- /.form-inner -->
-
-        <!-- Result feedback -->
-        <div class="result-card" id="newReportResult">
-          <div class="result-title" id="newReportResultTitle"></div>
-          <div class="result-body" id="newReportResultBody"></div>
+          <div class="action-wrap">
+            <button class="action-btn" id="submitBtn" onclick="submitReport()">
+              <div class="btn-spinner"></div>
+              <span class="btn-text">Save Report</span>
+            </button>
+            <button class="action-btn secondary" onclick="resetForm()">
+              Clear Form
+            </button>
+          </div>
         </div>
-
-        <!-- Submit actions -->
-        <div class="action-wrap">
-          <button class="action-btn" id="submitBtn" onclick="submitReport()">
-            <div class="btn-spinner"></div>
-            <span class="btn-text">Save Report</span>
-          </button>
-          <button class="action-btn secondary" onclick="resetForm()">Clear Form</button>
-        </div>
-
-      </div><!-- /.card-body -->
-    </div><!-- /#card-new-report -->
-
-    <!-- ── CARD 2: EXISTING REPORTS ───────────────────── -->
-    <div class="admin-card" id="card-reports">
-      <div class="card-header" onclick="toggleCard('card-reports')">
-        <div class="card-header-text">
-          <p class="card-label">Manage</p>
-          <h2 class="card-title">Existing Reports</h2>
-        </div>
-        <span class="card-chevron">▼</span>
+        <!-- /.card-body -->
       </div>
-      <div class="card-body">
-        <div class="reports-list" id="reportsList">
-          <div class="reports-loading">Loading reports…</div>
-        </div>
+      <!-- /#card-new-report -->
 
-        <!-- Delete result feedback -->
-        <div class="result-card" id="deleteResult" style="margin-top:8px;">
-          <div class="result-title" id="deleteResultTitle"></div>
-          <div class="result-body" id="deleteResultBody"></div>
+      <!-- ── CARD 2: EXISTING REPORTS ───────────────────── -->
+      <div class="admin-card" id="card-reports">
+        <div class="card-header" onclick="toggleCard('card-reports')">
+          <div class="card-header-text">
+            <p class="card-label">Manage</p>
+            <h2 class="card-title">Existing Reports</h2>
+          </div>
+          <span class="card-chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="reports-list" id="reportsList">
+            <div class="reports-loading">Loading reports…</div>
+          </div>
+          <div class="result-card" id="deleteResult" style="margin-top: 8px">
+            <div class="result-title" id="deleteResultTitle"></div>
+            <div class="result-body" id="deleteResultBody"></div>
+          </div>
         </div>
       </div>
+
+      <button class="logout-btn" onclick="logout()">
+        Sign out of admin panel
+      </button>
     </div>
+    <!-- /#adminPanel -->
 
-    <button class="logout-btn" onclick="logout()">Sign out of admin panel</button>
-
-  </div><!-- /#adminPanel -->
-
-<script>
-  let adminPassword = '';
-  let editingId = null; // Airtable record ID when in edit mode
-
-  // ── AUTH ──────────────────────────────────────────────────────────
-  function unlock() {
-    const pw = document.getElementById('passwordInput').value.trim();
-    if (!pw) return;
-    adminPassword = pw;
-    document.getElementById('lockScreen').style.display = 'none';
-    document.getElementById('adminPanel').classList.add('visible');
-    loadReports();
-  }
-
-  function logout() {
-    adminPassword = '';
-    editingId = null;
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('lockError').classList.remove('visible');
-    document.getElementById('lockScreen').style.display = '';
-    document.getElementById('adminPanel').classList.remove('visible');
-    resetForm();
-  }
-
-  // ── ACCORDION ─────────────────────────────────────────────────────
-  function toggleCard(id) {
-    document.getElementById(id).classList.toggle('open');
-  }
-
-  // ── ITEM TYPE MAP (mirrors server-side) ──────────────────────────
-  const ITEM_TYPE_MAP = {
-    "Body Wash":           "Hygiene",
-    "Conditioner":         "Hygiene",
-    "Deodorant":           "Hygiene",
-    "Hand Sanitizer":      "Hygiene",
-    "Hand Soap":           "Hygiene",
-    "Lotion":              "Hygiene",
-    "Shampoo":             "Hygiene",
-    "Soap (Bar)":          "Hygiene",
-    "Toothbrush":          "Hygiene",
-    "Toothpaste":          "Hygiene",
-    "All-Purpose Cleaner": "Household",
-    "Bleach":              "Household",
-    "Broom":               "Household",
-    "Dish Detergent":      "Household",
-    "Laundry Detergent":   "Household",
-    "Mop":                 "Household",
-    "Paper Towels":        "Household",
-    "Sponge":              "Household",
-    "Toilet Tissue":       "Household",
-    "Trash Bags":          "Household",
-  };
-
-  const HYGIENE_ITEMS   = Object.keys(ITEM_TYPE_MAP).filter(k => ITEM_TYPE_MAP[k] === "Hygiene");
-  const HOUSEHOLD_ITEMS = Object.keys(ITEM_TYPE_MAP).filter(k => ITEM_TYPE_MAP[k] === "Household");
-
-  // ── ITEMIZED DONATIONS ────────────────────────────────────────────
-  function addItemRow(itemName = '', qty = '') {
-    const list = document.getElementById('itemsList');
-    const row  = document.createElement('div');
-    row.className = 'item-row';
-
-    const hygieneOptions   = HYGIENE_ITEMS.map(i =>
-      `<option value="${i}" ${i === itemName ? 'selected' : ''}>${i}</option>`).join('');
-    const householdOptions = HOUSEHOLD_ITEMS.map(i =>
-      `<option value="${i}" ${i === itemName ? 'selected' : ''}>${i}</option>`).join('');
-
-    row.innerHTML = `
-      <select class="item-select">
-        <option value="" disabled ${!itemName ? 'selected' : ''}>Select item…</option>
-        <optgroup label="🧴 Hygiene">${hygieneOptions}</optgroup>
-        <optgroup label="🏠 Household">${householdOptions}</optgroup>
-      </select>
-      <input type="number" class="qty" placeholder="Qty" min="1" value="${qty}" />
-      <button class="remove-item-btn" onclick="this.closest('.item-row').remove()" title="Remove">×</button>
-    `;
-    list.appendChild(row);
-  }
-
-  function getDonatedItems() {
-    const items = [];
-    document.querySelectorAll('#itemsList .item-row').forEach(row => {
-      const select = row.querySelector('select');
-      const qtyInput = row.querySelector('input.qty');
-      const itemName = select ? select.value : '';
-      const quantity = parseInt(qtyInput ? qtyInput.value : '0', 10);
-      if (itemName && quantity > 0) {
-        items.push({ itemName, quantity });
-      }
-    });
-    return items;
-  }
-
-  // ── FORM HELPERS ──────────────────────────────────────────────────
-  function val(id)     { return document.getElementById(id).value.trim(); }
-  function numVal(id)  { return parseFloat(document.getElementById(id).value) || 0; }
-
-  function resetForm() {
-    editingId = null;
-    ['f-monthYear','f-peopleServed','f-locationsServed','f-hygieneItems',
-     'f-houseWarmingBaskets','f-monetaryDonations','f-newPartnerships','f-narrative'
-    ].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('itemsList').innerHTML = '';
-    document.getElementById('editBanner').classList.remove('visible');
-    hideResult('newReportResult');
-    clearErrors();
-  }
-
-  function clearErrors() {
-    document.querySelectorAll('.field-error.visible').forEach(el => el.classList.remove('visible'));
-    document.querySelectorAll('.form-input.error, .form-textarea.error').forEach(el => el.classList.remove('error'));
-  }
-
-  function showFieldError(fieldId, errId) {
-    document.getElementById(fieldId).classList.add('error');
-    document.getElementById(errId).classList.add('visible');
-  }
-
-  function showResult(cardId, titleId, bodyId, type, title, body) {
-    const card = document.getElementById(cardId);
-    card.className = `result-card visible ${type}`;
-    document.getElementById(titleId).textContent = title;
-    document.getElementById(bodyId).innerHTML = body;
-  }
-
-  function hideResult(cardId) {
-    document.getElementById(cardId).className = 'result-card';
-  }
-
-  function setLoading(btnId, loading) {
-    const btn = document.getElementById(btnId);
-    btn.classList.toggle('loading', loading);
-    btn.disabled = loading;
-  }
-
-  // ── LOAD EXISTING REPORTS ─────────────────────────────────────────
-  async function loadReports() {
-    const list = document.getElementById('reportsList');
-    list.innerHTML = '<div class="reports-loading">Loading reports…</div>';
-
-    try {
-      const res  = await fetch('/.netlify/functions/get-monthly-reports');
-      const data = await res.json();
-
-      if (!data.reports || data.reports.length === 0) {
-        list.innerHTML = '<div class="reports-empty">No reports yet. Create one above.</div>';
-        return;
-      }
-
-      const sorted = [...data.reports].sort((a, b) =>
-        new Date(b.monthYear) - new Date(a.monthYear)
-      );
-
-      list.innerHTML = sorted.map(r => `
-        <div class="report-row">
-          <div>
-            <div class="report-row-month">${formatMonthYear(r.monthYear)}</div>
-            <div class="report-row-meta">${r.peopleServed} people served · ${r.hygieneItems} items · ${r.houseWarmingBaskets} baskets</div>
-          </div>
-          <div class="report-row-actions">
-            <button class="row-btn edit" onclick="startEdit(${JSON.stringify(r).replace(/"/g,'&quot;')})">Edit</button>
-            <button class="row-btn del"  onclick="deleteReport('${r.id}', '${r.monthYear}')">Delete</button>
-          </div>
-        </div>
-      `).join('');
-
-    } catch (err) {
-      list.innerHTML = `<div class="reports-empty" style="color:var(--red);">Failed to load: ${err.message}</div>`;
-    }
-  }
-
-  function formatMonthYear(my) {
-    const [year, month] = my.split('-');
-    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
-      .format(new Date(year, month - 1));
-  }
-
-  // ── EDIT EXISTING REPORT ──────────────────────────────────────────
-  function startEdit(report) {
-    editingId = report.id;
-    document.getElementById('f-monthYear').value          = report.monthYear;
-    document.getElementById('f-peopleServed').value       = report.peopleServed || '';
-    document.getElementById('f-locationsServed').value    = report.locationsServed || '';
-    document.getElementById('f-hygieneItems').value       = report.hygieneItems || '';
-    document.getElementById('f-houseWarmingBaskets').value= report.houseWarmingBaskets || '';
-    document.getElementById('f-monetaryDonations').value  = report.monetaryDonations || '';
-    document.getElementById('f-newPartnerships').value    = report.newPartnerships || '';
-    document.getElementById('f-narrative').value          = report.narrative || '';
-
-    // Populate itemized donations from donatedItems array
-    document.getElementById('itemsList').innerHTML = '';
-    const items = report.donatedItems || [];
-    items.forEach(item => addItemRow(item.itemName, item.quantity));
-
-    // Show edit banner
-    document.getElementById('editBannerMonth').textContent = formatMonthYear(report.monthYear);
-    document.getElementById('editBanner').classList.add('visible');
-
-    hideResult('newReportResult');
-
-    // Open the new report card and scroll to it
-    document.getElementById('card-new-report').classList.add('open');
-    document.getElementById('card-new-report').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  function cancelEdit() {
-    resetForm();
-  }
-
-  // ── SUBMIT (create or update) ─────────────────────────────────────
-  async function submitReport() {
-    clearErrors();
-    hideResult('newReportResult');
-
-    // Validate
-    let valid = true;
-    if (!val('f-monthYear')) {
-      showFieldError('f-monthYear', 'err-monthYear');
-      valid = false;
-    }
-    if (!valid) return;
-
-    setLoading('submitBtn', true);
-
-    const payload = {
-      password:            adminPassword,
-      monthYear:           val('f-monthYear'),
-      peopleServed:        numVal('f-peopleServed'),
-      locationsServed:     val('f-locationsServed'),
-      hygieneItems:        numVal('f-hygieneItems'),
-      houseWarmingBaskets: numVal('f-houseWarmingBaskets'),
-      monetaryDonations:   numVal('f-monetaryDonations'),
-      newPartnerships:     numVal('f-newPartnerships'),
-      narrative:           val('f-narrative'),
-      donatedItems:        getDonatedItems(),
-    };
-
-    const isEdit   = !!editingId;
-    const endpoint = isEdit
-      ? '/.netlify/functions/update-monthly-report'
-      : '/.netlify/functions/save-monthly-report';
-
-    if (isEdit) payload.id = editingId;
-
-    try {
-      const res  = await fetch(endpoint, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-      });
-      const data = await res.json();
-
-      if (res.status === 401) {
-        document.getElementById('lockError').classList.add('visible');
-        logout();
-        return;
-      }
-
-      if (res.status === 409) {
-        showResult('newReportResult','newReportResultTitle','newReportResultBody',
-          'error', '⚠ Duplicate Month', data.error || 'A report for this month already exists.');
-        return;
-      }
-
-      if (!res.ok || !data.success) {
-        showResult('newReportResult','newReportResultTitle','newReportResultBody',
-          'error', '⚠ Something went wrong', data.error || 'Unknown error — check Netlify logs.');
-        return;
-      }
-
-      showResult('newReportResult','newReportResultTitle','newReportResultBody',
-        'success',
-        isEdit ? '✓ Report Updated' : '✓ Report Saved',
-        `<strong>${formatMonthYear(payload.monthYear)}</strong> has been ${isEdit ? 'updated' : 'saved'} successfully.`
-      );
-
-      resetForm();
-      loadReports(); // refresh list
-
-    } catch (err) {
-      showResult('newReportResult','newReportResultTitle','newReportResultBody',
-        'error', '⚠ Network Error', err.message || 'Could not reach the server.');
-    } finally {
-      setLoading('submitBtn', false);
-    }
-  }
-
-  // ── DELETE REPORT ─────────────────────────────────────────────────
-  async function deleteReport(id, monthYear) {
-    if (!confirm(`Delete the report for ${formatMonthYear(monthYear)}? This cannot be undone.`)) return;
-
-    hideResult('deleteResult');
-
-    try {
-      const res  = await fetch('/.netlify/functions/delete-monthly-report', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ password: adminPassword, id }),
-      });
-      const data = await res.json();
-
-      if (res.status === 401) {
-        document.getElementById('lockError').classList.add('visible');
-        logout();
-        return;
-      }
-
-      if (!res.ok || !data.success) {
-        showResult('deleteResult','deleteResultTitle','deleteResultBody',
-          'error', '⚠ Delete failed', data.error || 'Unknown error.');
-        return;
-      }
-
-      showResult('deleteResult','deleteResultTitle','deleteResultBody',
-        'success', '✓ Report Deleted', `The report for <strong>${formatMonthYear(monthYear)}</strong> has been removed.`);
-
-      loadReports();
-
-    } catch (err) {
-      showResult('deleteResult','deleteResultTitle','deleteResultBody',
-        'error', '⚠ Network Error', err.message);
-    }
-  }
-</script>
-</body>
+    <script src="scripts/admin.js"></script>
+  </body>
 </html>
