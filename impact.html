@@ -227,8 +227,12 @@
                     </div>
 
                     <div class="card-narrative">
-                        'Locations Served: ' + ${report.locationsServed || 'Impact story coming soon.'}
+                        Locations Served:  ${report.locationsServed || ''}
                     </div>
+                    <div class="card-narrative">
+                      ${report.narrative || 'Impact story coming soon.'}
+                    </div>
+
                 </div>
             `
           )
