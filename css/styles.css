@@ -231,9 +231,19 @@ nav a:hover {
 .stats-section {
     max-width: 1200px;
     margin: -60px auto 60px;
-    padding: 0 20px;
+    padding: 80px 20px 30px;
     position: relative;
     z-index: 10;
+}
+.stats-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.stats-header h2 {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--color-primary-green);
+    margin-bottom: 10px;
 }
 
 .stats-grid {
