@@ -1,0 +1,253 @@
+/* ========================================
+   REPORT PANEL STYLES
+   Side panel (desktop) / bottom sheet (mobile)
+   for the Monthly Impact Reports page
+   ======================================== */
+
+/* ── Card clickable affordance ── */
+.cards-grid .report-card {
+    cursor: pointer;
+}
+
+.card-month {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-dark);
+    margin-bottom: 6px;
+}
+
+.card-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.card-view-hint {
+    font-size: 11px;
+    color: var(--color-text-lighter);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    margin-top: 6px;
+}
+
+.loading-text {
+    margin-top: 15px;
+    color: var(--color-text-lighter);
+}
+
+.empty-state--full {
+    grid-column: 1 / -1;
+}
+
+/* ── Overlay ── */
+.panel-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.panel-overlay.show {
+    display: block;
+}
+
+.panel-overlay.visible {
+    opacity: 1;
+}
+
+/* ── Side Panel (desktop) ── */
+.detail-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 420px;
+    max-width: 100vw;
+    height: 100%;
+    background: var(--color-white);
+    z-index: 201;
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.detail-panel.open {
+    transform: translateX(0);
+}
+
+/* ── Panel Header ── */
+.panel-header {
+    background: linear-gradient(135deg, var(--color-primary-green) 0%, var(--color-primary-green-light) 100%);
+    color: var(--color-white);
+    padding: 28px 24px 24px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.panel-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: var(--color-white);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.panel-close:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.panel-month {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.panel-subtitle {
+    font-size: 13px;
+    opacity: 0.85;
+}
+
+/* ── Panel Body ── */
+.panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+/* ── Summary Row ── */
+.panel-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.panel-summary-item {
+    background: var(--color-bg-light);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+}
+
+.panel-summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-accent-brown);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.panel-summary-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--color-text-light);
+}
+
+/* ── Item Groups ── */
+.item-group {
+    margin-bottom: 24px;
+}
+
+.item-group-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--color-primary-green);
+    border-bottom: 2px solid var(--color-bg-green-light);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+.item-row-name {
+    font-size: 14px;
+    color: var(--color-text-dark);
+    font-weight: 500;
+}
+
+.item-row-qty {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-accent-brown);
+    background: var(--color-bg-brown-light);
+    padding: 3px 10px;
+    border-radius: 12px;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* ── Empty State ── */
+.panel-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--color-text-lighter);
+}
+
+.panel-empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.panel-empty p {
+    font-size: 14px;
+}
+
+/* ── Bottom Sheet (mobile/tablet) ── */
+@media (max-width: 768px) {
+    .detail-panel {
+        top: auto;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        width: 100%;
+        height: 80vh;
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+        box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .detail-panel.open {
+        transform: translateY(0);
+    }
+
+    /* Drag handle indicator */
+    .panel-header::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 2px;
+        margin: 0 auto 16px;
+    }
+}

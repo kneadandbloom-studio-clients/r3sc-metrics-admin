@@ -1,163 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Monthly Impact Reports - The R3SC</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/styles.css" />
-</head>
-<body>
+    <link rel="stylesheet" href="css/report-panel.css" />
+  </head>
+  <body>
     <!-- Header -->
     <header>
-        <div class="header-content">
-            <a href="/" class="logo">
-                <span><img src="imgs/the-r3sc-logo.png" /></span>
-                The R3SC
-            </a>
-            <nav>
-                <a href="/">Home</a>
-                <a href="#impact">Impact</a>
-            </nav>
-        </div>
+      <div class="header-content">
+        <a href="/" class="logo">
+          <span><img src="imgs/the-r3sc-logo.png" /></span>
+          The R3SC
+        </a>
+        <nav>
+          <a href="/">Home</a>
+          <a href="#impact">Impact</a>
+        </nav>
+      </div>
     </header>
 
     <!-- Page Title -->
     <section class="page-header">
-        <div class="page-title">Monthly Reports</div>
-        <h1 class="page-heading">Every month,</h1>
-        <p class="page-subheading">counted & shared</p>
+      <div class="page-title">Monthly Reports</div>
+      <h1 class="page-heading">Every month,</h1>
+      <p class="page-subheading">counted & shared</p>
     </section>
 
     <!-- Filter Buttons -->
     <section class="filter-section">
-        <button class="filter-btn active" onclick="filterReports('all')">ALL</button>
-        <button class="filter-btn" onclick="filterReports('2026')">2026</button>
-        <button class="filter-btn" onclick="filterReports('2025')">2025</button>
+      <button class="filter-btn active" onclick="filterReports('all')">
+        ALL
+      </button>
+      <button class="filter-btn" onclick="filterReports('2026')">2026</button>
+      <button class="filter-btn" onclick="filterReports('2025')">2025</button>
     </section>
 
     <!-- Cards Grid -->
     <section class="cards-section">
-        <div class="cards-grid" id="cardsGrid">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p style="margin-top: 15px; color: #7f8c8d;">Loading reports...</p>
-            </div>
+      <div class="cards-grid" id="cardsGrid">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p class="loading-text">Loading reports...</p>
         </div>
+      </div>
     </section>
+
+    <!-- Overlay -->
+    <div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+
+    <!-- Detail Panel -->
+    <div
+      class="detail-panel"
+      id="detailPanel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Item breakdown"
+    >
+      <div class="panel-header">
+        <button class="panel-close" onclick="closePanel()" aria-label="Close">
+          ✕
+        </button>
+        <div class="panel-month" id="panelMonth"></div>
+        <div class="panel-subtitle">Donated Items Breakdown</div>
+      </div>
+      <div class="panel-body" id="panelBody"></div>
+    </div>
 
     <!-- Footer -->
     <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>The R3SC</h4>
-                <p>Restoring Resources, Respect & Community. A 501(c)(3) non-profit dedicated to serving unhoused neighbors with dignity.</p>
-            </div>
-            <div class="footer-section">
-                <h4>Tax Information</h4>
-                <p>Tax ID #85-4234667. Donations are tax-deductible. No goods or services are exchanged.</p>
-            </div>
-            <div class="footer-section">
-                <h4>Connect</h4>
-                <p>Learn more about our mission and volunteer opportunities.</p>
-            </div>
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>The R3SC</h4>
+          <p>
+            Restoring Resources, Respect & Community. A 501(c)(3) non-profit
+            dedicated to serving unhoused neighbors with dignity.
+          </p>
         </div>
-        <div class="footer-bottom">
-            <p>Copyright © 2026 The R3SC. All Rights Reserved.</p>
+        <div class="footer-section">
+          <h4>Tax Information</h4>
+          <p>
+            Tax ID #85-4234667. Donations are tax-deductible. No goods or
+            services are exchanged.
+          </p>
         </div>
+        <div class="footer-section">
+          <h4>Connect</h4>
+          <p>Learn more about our mission and volunteer opportunities.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>Copyright © 2026 The R3SC. All Rights Reserved.</p>
+      </div>
     </footer>
 
     <script>
-        let allReports = [];
-        let currentFilter = 'all';
+      let allReports = []
+      let currentFilter = 'all'
 
-        document.addEventListener('DOMContentLoaded', loadReports);
+      document.addEventListener('DOMContentLoaded', loadReports)
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closePanel()
+      })
 
-        async function loadReports() {
-            try {
-                const response = await fetch('/.netlify/functions/get-monthly-reports');
-                const data = await response.json();
-                allReports = data.reports || [];
-                renderCards();
-            } catch (error) {
-                console.error('Error loading reports:', error);
-                document.getElementById('cardsGrid').innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
+      async function loadReports() {
+        try {
+          const response = await fetch(
+            '/.netlify/functions/get-monthly-reports'
+          )
+          const data = await response.json()
+          allReports = data.reports || []
+          renderCards()
+        } catch (error) {
+          console.error('Error loading reports:', error)
+          document.getElementById('cardsGrid').innerHTML = `
+                    <div class="empty-state empty-state--full">
                         <div class="empty-state-icon">⚠️</div>
                         <h3>Unable to load reports</h3>
                         <p>${error.message}</p>
                     </div>
-                `;
-            }
+                `
         }
+      }
 
-        function filterReports(year) {
-            currentFilter = year;
-            
-            // Update active button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            renderCards();
-        }
+      function filterReports(year) {
+        currentFilter = year
+        document
+          .querySelectorAll('.filter-btn')
+          .forEach(btn => btn.classList.remove('active'))
+        event.target.classList.add('active')
+        renderCards()
+      }
 
-        function renderCards() {
-            const cardsGrid = document.getElementById('cardsGrid');
+      function renderCards() {
+        const cardsGrid = document.getElementById('cardsGrid')
 
-            if (allReports.length === 0) {
-                cardsGrid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
+        if (allReports.length === 0) {
+          cardsGrid.innerHTML = `
+                    <div class="empty-state empty-state--full">
                         <div class="empty-state-icon">📊</div>
                         <h3>No reports yet</h3>
                         <p>Monthly impact reports will appear here.</p>
                     </div>
-                `;
-                return;
-            }
+                `
+          return
+        }
 
-            // Filter reports by year
-            let filtered = allReports;
-            if (currentFilter !== 'all') {
-                filtered = allReports.filter(r => r.monthYear.startsWith(currentFilter));
-            }
+        let filtered = allReports
+        if (currentFilter !== 'all') {
+          filtered = allReports.filter(r =>
+            r.monthYear.startsWith(currentFilter)
+          )
+        }
 
-            if (filtered.length === 0) {
-                cardsGrid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
+        if (filtered.length === 0) {
+          cardsGrid.innerHTML = `
+                    <div class="empty-state empty-state--full">
                         <div class="empty-state-icon">📅</div>
                         <h3>No reports for ${currentFilter}</h3>
                         <p>Check back soon for impact stories.</p>
                     </div>
-                `;
-                return;
-            }
+                `
+          return
+        }
 
-            // Sort by month/year descending
-            const sorted = [...filtered].sort((a, b) => 
-                new Date(b.monthYear) - new Date(a.monthYear)
-            );
+        const sorted = [...filtered].sort(
+          (a, b) => new Date(b.monthYear) - new Date(a.monthYear)
+        )
 
-            cardsGrid.innerHTML = sorted.map((report, idx) => `
-                <div class="report-card" style="animation-delay: ${idx * 0.05}s;">
+        const hasItems = r => r.donatedItems && r.donatedItems.length > 0
+
+        cardsGrid.innerHTML = sorted
+          .map(
+            (report, idx) => `
+                <div class="report-card"
+                     style="animation-delay: ${idx * 0.05}s;"
+                     onclick="openPanel('${report.id}')">
                     <div class="card-header">
-                        <div class="card-month">${formatMonthYear(report.monthYear)}</div>
-                        ${isRecentReport(report.monthYear) ? '<div class="card-badge">Recent</div>' : ''}
+                        <div class="card-month">${formatMonthYear(
+                          report.monthYear
+                        )}</div>
+                        <div class="card-badges">
+                            ${
+                              isRecentReport(report.monthYear)
+                                ? '<div class="card-badge">Recent</div>'
+                                : ''
+                            }
+                            ${
+                              hasItems(report)
+                                ? '<div class="card-view-hint">Tap to view items →</div>'
+                                : ''
+                            }
+                        </div>
                     </div>
 
                     <div class="card-metrics">
                         <div class="metric">
-                            <div class="metric-value">${report.donatedItems ? report.donatedItems.reduce((sum, i) => sum + i.quantity, 0) : report.hygieneItems || 0}</div>
-
+                            <div class="metric-value">${
+                              report.donatedItems
+                                ? report.donatedItems.reduce(
+                                    (sum, i) => sum + i.quantity,
+                                    0
+                                  )
+                                : report.hygieneItems || 0
+                            }</div>
                             <div class="metric-label">Items<br/>Donated</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">${report.houseWarmingBaskets || 0}</div>
+                            <div class="metric-value">${
+                              report.houseWarmingBaskets || 0
+                            }</div>
                             <div class="metric-label">House<br/>Warming Baskets</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">${report.peopleServed || 0}</div>
+                            <div class="metric-value">${
+                              report.peopleServed || 0
+                            }</div>
                             <div class="metric-label">People<br/>Served</div>
                         </div>
                     </div>
@@ -166,22 +230,123 @@
                         ${report.narrative || 'Impact story coming soon.'}
                     </div>
                 </div>
-            `).join('');
+            `
+          )
+          .join('')
+      }
+
+      // ── Panel ─────────────────────────────────────────────────
+
+      function openPanel(reportId) {
+        const report = allReports.find(r => r.id === reportId)
+        if (!report) return
+
+        document.getElementById('panelMonth').textContent = formatMonthYear(
+          report.monthYear
+        )
+        document.getElementById('panelBody').innerHTML = buildPanelBody(report)
+
+        const overlay = document.getElementById('panelOverlay')
+        const panel = document.getElementById('detailPanel')
+        overlay.classList.add('show')
+        requestAnimationFrame(() => {
+          overlay.classList.add('visible')
+          panel.classList.add('open')
+        })
+        document.body.style.overflow = 'hidden'
+      }
+
+      function closePanel() {
+        const overlay = document.getElementById('panelOverlay')
+        const panel = document.getElementById('detailPanel')
+        overlay.classList.remove('visible')
+        panel.classList.remove('open')
+        setTimeout(() => {
+          overlay.classList.remove('show')
+          document.body.style.overflow = ''
+        }, 350)
+      }
+
+      function buildPanelBody(report) {
+        const items = report.donatedItems || []
+
+        if (items.length === 0) {
+          return `
+                    <div class="panel-empty">
+                        <div class="panel-empty-icon">📦</div>
+                        <p>No itemized donations recorded for this month.</p>
+                    </div>
+                `
         }
 
-        function formatMonthYear(monthYear) {
-            const [year, month] = monthYear.split('-');
-            const date = new Date(year, month - 1);
-            return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date);
-        }
+        const totalQty = items.reduce((sum, i) => sum + i.quantity, 0)
 
-        function isRecentReport(monthYear) {
-            const [year, month] = monthYear.split('-');
-            const reportDate = new Date(year, month - 1);
-            const now = new Date();
-            const monthsAgo = (now.getFullYear() - reportDate.getFullYear()) * 12 + (now.getMonth() - reportDate.getMonth());
-            return monthsAgo <= 1;
-        }
+        const groups = {}
+        items.forEach(item => {
+          const type = item.itemType || 'Other'
+          if (!groups[type]) groups[type] = []
+          groups[type].push(item)
+        })
+        Object.values(groups).forEach(g =>
+          g.sort((a, b) => b.quantity - a.quantity)
+        )
+
+        const groupsHTML = ['Hygiene', 'Household', 'Other']
+          .filter(type => groups[type])
+          .map(
+            type => `
+                    <div class="item-group">
+                        <div class="item-group-title">${type}</div>
+                        ${groups[type]
+                          .map(
+                            item => `
+                            <div class="item-row">
+                                <span class="item-row-name">${item.itemName}</span>
+                                <span class="item-row-qty">${item.quantity}</span>
+                            </div>
+                        `
+                          )
+                          .join('')}
+                    </div>
+                `
+          )
+          .join('')
+
+        return `
+                <div class="panel-summary">
+                    <div class="panel-summary-item">
+                        <div class="panel-summary-value">${totalQty}</div>
+                        <div class="panel-summary-label">Total Items</div>
+                    </div>
+                    <div class="panel-summary-item">
+                        <div class="panel-summary-value">${items.length}</div>
+                        <div class="panel-summary-label">Item Types</div>
+                    </div>
+                </div>
+                ${groupsHTML}
+            `
+      }
+
+      // ── Helpers ───────────────────────────────────────────────
+
+      function formatMonthYear(monthYear) {
+        const [year, month] = monthYear.split('-')
+        const date = new Date(year, month - 1)
+        return new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          year: 'numeric'
+        }).format(date)
+      }
+
+      function isRecentReport(monthYear) {
+        const [year, month] = monthYear.split('-')
+        const reportDate = new Date(year, month - 1)
+        const now = new Date()
+        const monthsAgo =
+          (now.getFullYear() - reportDate.getFullYear()) * 12 +
+          (now.getMonth() - reportDate.getMonth())
+        return monthsAgo <= 1
+      }
     </script>
-</body>
+  </body>
 </html>
