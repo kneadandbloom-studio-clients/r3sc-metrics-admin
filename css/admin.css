@@ -449,6 +449,13 @@
         transition: max-height 0.35s ease, padding 0.25s ease;
         margin: 0 24px;
       }
+      .result-card.info {
+        background: #e8f0fe;
+        border-left: 4px solid #4a6fa5;
+      }
+      .result-card.info .result-title {
+        color: #4a6fa5;
+      }
       .result-card.visible {
         max-height: 300px;
         padding: 18px;
