@@ -297,7 +297,18 @@ function startEdit(report) {
 	document.getElementById("f-narrative").value = report.narrative || "";
 
 	document.getElementById("itemsList").innerHTML = "";
-	(report.donatedItems || []).forEach((item) => addItemRow(item.itemName, item.quantity));
+	const collapsed = Object.values(
+		(report.donatedItems || []).reduce((acc, item) => {
+			if (!item.itemName) return acc;
+			if (acc[item.itemName]) {
+				acc[item.itemName].quantity += item.quantity;
+			} else {
+				acc[item.itemName] = { itemName: item.itemName, quantity: item.quantity };
+			}
+			return acc;
+		}, {})
+	);
+	collapsed.forEach((item) => addItemRow(item.itemName, item.quantity));
 
 	// Treat existing narrative as manually set — show Regenerate option
 	if (report.narrative) {
