@@ -1045,3 +1045,179 @@ footer {
         padding-bottom: 15px;
     }
 }
+
+/* ========================================
+   THIS MONTH STATS LABEL
+   ======================================== */
+
+.stats-section-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--color-text-lighter);
+    margin-bottom: -10px;
+    padding-top: 20px;
+}
+
+/* ========================================
+   ALL-TIME IMPACT TOTALS SECTION
+   ======================================== */
+
+.totals-section {
+    background: linear-gradient(135deg, var(--color-primary-green) 0%, var(--color-primary-green-dark) 100%);
+    padding: 70px 20px;
+    margin-top: 40px;
+}
+
+.totals-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.totals-header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.totals-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 10px;
+}
+
+.totals-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--color-white);
+    margin-bottom: 10px;
+}
+
+.totals-sub {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.75);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.totals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.total-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    animation: slideUp 0.8s ease-out both;
+}
+
+.total-card:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-4px);
+}
+
+.total-card--loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 130px;
+}
+
+.total-card--empty,
+.total-card--error {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    padding: 40px 20px;
+}
+
+.total-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+}
+
+.total-value {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--color-white);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.total-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.4;
+}
+
+/* ========================================
+   CTA CENTER WRAPPER
+   (replaces inline style="text-align:center")
+   ======================================== */
+
+.cta-center {
+    text-align: center;
+    margin-top: 40px;
+}
+
+/* ========================================
+   EMPTY STAT VALUE
+   (replaces inline style="color:#95a5a6")
+   ======================================== */
+
+.stat-value--empty {
+    color: var(--color-text-lighter);
+}
+
+/* ========================================
+   ERROR STAT CARD
+   (replaces inline style on error state)
+   ======================================== */
+
+.stat-card--error {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.stat-card--error p {
+    color: var(--color-text-lighter);
+    margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .totals-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .totals-title {
+        font-size: 28px;
+    }
+
+    .total-value {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    .totals-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .total-value {
+        font-size: 26px;
+    }
+}
