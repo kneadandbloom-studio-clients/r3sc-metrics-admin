@@ -53,16 +53,18 @@ exports.handler = async (event) => {
 
   try {
     // ── 1. Delete related DonatedItems rows first ─────────────────
-    const relatedItems = await base("DonatedItems")
-      .select({ filterByFormula: `FIND("${body.id}", ARRAYJOIN({monthYear}))` })
-      .all();
+    const allItems = await base("DonatedItems").select().all();
+    const toDelete = allItems.filter(r => {
+      const linked = r.fields.monthYear;
+      return Array.isArray(linked) && linked.includes(body.id);
+    });
 
-    if (relatedItems.length > 0) {
-      const ids = relatedItems.map(r => r.id);
+    if (toDelete.length > 0) {
+      const ids = toDelete.map(r => r.id);
       for (let i = 0; i < ids.length; i += 10) {
         await base("DonatedItems").destroy(ids.slice(i, i + 10));
       }
-      console.log(`Deleted ${relatedItems.length} DonatedItems for report ${body.id}`);
+      console.log(`Deleted ${toDelete.length} DonatedItems for report ${body.id}`);
     }
 
     // ── 2. Delete the MonthlyReports row ─────────────────────────

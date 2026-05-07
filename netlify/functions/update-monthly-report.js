@@ -49,13 +49,15 @@ function isValidPassword(submitted) {
 }
 
 async function replaceDonatedItems(base, reportRecordId, items) {
-  // Delete existing
-  const existing = await base("DonatedItems")
-    .select({ filterByFormula: `FIND("${reportRecordId}", ARRAYJOIN(RECORD_ID({monthYear})))` })
-    .all();
+  // Fetch all DonatedItems and filter by linked record ID in JS
+  const allItems = await base("DonatedItems").select().all();
+  const toDelete = allItems.filter(r => {
+    const linked = r.fields.monthYear;
+    return Array.isArray(linked) && linked.includes(reportRecordId);
+  });
 
-  if (existing.length > 0) {
-    const ids = existing.map(r => r.id);
+  if (toDelete.length > 0) {
+    const ids = toDelete.map(r => r.id);
     for (let i = 0; i < ids.length; i += 10) {
       await base("DonatedItems").destroy(ids.slice(i, i + 10));
     }

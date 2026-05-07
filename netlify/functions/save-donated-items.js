@@ -85,15 +85,15 @@ exports.handler = async (event) => {
 
   try {
     // ── 1. Delete existing DonatedItems rows for this report ──────
-    const existing = await base("DonatedItems")
-      .select({
-        filterByFormula: `FIND("${reportRecordId}", ARRAYJOIN(RECORD_ID({monthYear})))`,
-      })
-      .all();
+    const allItems = await base("DonatedItems").select().all();
+    const toDelete = allItems.filter(r => {
+      const linked = r.fields.monthYear;
+      return Array.isArray(linked) && linked.includes(reportRecordId);
+    });
 
-    if (existing.length > 0) {
+    if (toDelete.length > 0) {
       // Airtable batch delete max 10 at a time
-      const ids = existing.map(r => r.id);
+      const ids = toDelete.map(r => r.id);
       for (let i = 0; i < ids.length; i += 10) {
         await base("DonatedItems").destroy(ids.slice(i, i + 10));
       }
