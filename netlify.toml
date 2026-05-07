@@ -6,6 +6,18 @@
   command = "echo 'Running local dev server'"
   port = 8888
 
+# ── Cache control for static assets ──────────────────────────────────────────
+# Forces browser to revalidate JS and CSS on every load — prevents stale cache
+[[headers]]
+  for = "/scripts/*"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
 # ── Security headers ──────────────────────────────────────────────────────────
 [[headers]]
   for = "/*"
