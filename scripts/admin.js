@@ -36,7 +36,7 @@ const ITEM_TYPE_MAP = {
 	"Hand Sanitizer(s)": "Hygiene",
 	"Hand Soap(s)": "Hygiene",
 	"Lotion(s)": "Hygiene",
-	"Shampoo": "Hygiene",
+	"Shampoo(s)": "Hygiene",
 	"Soap Bar(s)": "Hygiene",
 	"Toothbrush(es)": "Hygiene",
 	"Toothpaste(s)": "Hygiene",
