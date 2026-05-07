@@ -87,7 +87,7 @@ exports.handler = async (event) => {
     // ── 1. Delete existing DonatedItems rows for this report ──────
     const existing = await base("DonatedItems")
       .select({
-        filterByFormula: `FIND("${reportRecordId}", ARRAYJOIN({monthYear}))`,
+        filterByFormula: `FIND("${reportRecordId}", ARRAYJOIN(RECORD_ID({monthYear})))`,
       })
       .all();
 

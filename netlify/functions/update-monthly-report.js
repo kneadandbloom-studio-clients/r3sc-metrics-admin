@@ -51,7 +51,7 @@ function isValidPassword(submitted) {
 async function replaceDonatedItems(base, reportRecordId, items) {
   // Delete existing
   const existing = await base("DonatedItems")
-    .select({ filterByFormula: `FIND("${reportRecordId}", ARRAYJOIN({monthYear}))` })
+    .select({ filterByFormula: `FIND("${reportRecordId}", ARRAYJOIN(RECORD_ID({monthYear})))` })
     .all();
 
   if (existing.length > 0) {
