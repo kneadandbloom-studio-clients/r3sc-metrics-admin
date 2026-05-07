@@ -133,6 +133,30 @@ function regenNarrative() {
 	generateNarrative();
 }
 
+// ── NARRATIVE DISPLAY NAMES ───────────────────────────────────────
+const NARRATIVE_DISPLAY_MAP = {
+	"Body Wash":           "Body Washes",
+	"Conditioner":         "Conditioners",
+	"Deodorant":           "Deodorants",
+	"Hand Sanitizer":      "Hand Sanitizers",
+	"Hand Soap":           "Hand Soaps",
+	"Lotion":              "Lotions",
+	"Shampoo":             "Shampoos",
+	"Soap (Bar)":          "Bars of Soap",
+	"Toothbrush":          "Toothbrushes",
+	"Toothpaste":          "Tubes of Toothpaste",
+	"All-Purpose Cleaner": "All-Purpose Cleaners",
+	"Bleach":              "Bottles of Bleach",
+	"Broom":               "Brooms",
+	"Dish Detergent":      "Dish Detergents",
+	"Laundry Detergent":   "Laundry Detergents",
+	"Mop":                 "Mops",
+	"Paper Towels":        "Rolls of Paper Towels",
+	"Sponge":              "Sponges",
+	"Toilet Tissue":       "Rolls of Toilet Tissue",
+	"Trash Bags":          "Boxes of Trash Bags",
+};
+
 function generateNarrative() {
 	const monthYearVal = document.getElementById("f-monthYear").value;
 	const peopleServed = parseInt(document.getElementById("f-peopleServed").value) || 0;
@@ -160,11 +184,11 @@ function generateNarrative() {
 	// Totals
 	const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
 
-	// Top 3 items by quantity
+	// Top 3 items by quantity, using display names
 	const top3 = [...items]
 		.sort((a, b) => b.quantity - a.quantity)
 		.slice(0, 3)
-		.map((i) => `${i.quantity} ${i.itemName.toLowerCase()}`)
+		.map((i) => `${i.quantity} ${(NARRATIVE_DISPLAY_MAP[i.itemName] || i.itemName).toLowerCase()}`)
 		.join(", ");
 
 	// Optional phrases
