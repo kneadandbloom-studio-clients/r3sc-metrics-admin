@@ -133,15 +133,15 @@
 /* ── Summary Row ── */
 .panel-summary {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
-    margin-bottom: 28px;
+    margin-bottom: 12px;
 }
 
 .panel-summary-item {
     background: var(--color-bg-light);
     border-radius: 8px;
-    padding: 14px 16px;
+    padding: 14px 8px;
     text-align: center;
 }
 
@@ -154,11 +154,29 @@
 }
 
 .panel-summary-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.4px;
     color: var(--color-text-light);
+}
+
+/* ── Locations Row ── */
+.panel-locations {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-bg-light);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--color-text-light);
+}
+
+.panel-locations-icon {
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 /* ── Item Groups ── */

@@ -317,6 +317,13 @@
           )
           .join('')
 
+        const locationsRow = report.locationsServed ? `
+                <div class="panel-locations">
+                    <span class="panel-locations-icon">📍</span>
+                    <span>${report.locationsServed}</span>
+                </div>
+            ` : ''
+
         return `
                 <div class="panel-summary">
                     <div class="panel-summary-item">
@@ -324,10 +331,15 @@
                         <div class="panel-summary-label">Total Items</div>
                     </div>
                     <div class="panel-summary-item">
-                        <div class="panel-summary-value">${items.length}</div>
-                        <div class="panel-summary-label">Item Types</div>
+                        <div class="panel-summary-value">${report.peopleServed || 0}</div>
+                        <div class="panel-summary-label">People Served</div>
+                    </div>
+                    <div class="panel-summary-item">
+                        <div class="panel-summary-value">${report.houseWarmingBaskets || 0}</div>
+                        <div class="panel-summary-label">Baskets</div>
                     </div>
                 </div>
+                ${locationsRow}
                 ${groupsHTML}
             `
       }
